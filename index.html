@@ -208,7 +208,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
   padding:12px 16px;border-radius:var(--r);font-size:14px;z-index:40;
   box-shadow:0 6px 20px rgba(22,32,43,.28);max-width:90vw;
 }
-.pied{font-size:12px;color:var(--acier-400);text-align:center;margin:18px 0 8px}
+.pied{font-size:12px;color:var(--acier-400);text-align:center;margin:18px 0 8px;padding:10px;cursor:default;user-select:none}
 
 .etat-sauvegarde{
   font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
@@ -238,9 +238,50 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
 }
 .btn-devis:hover{background:#17527a}
 
+/* ---------- Pointage de la semaine ---------- */
+.pointage{
+  background:var(--blanc);border:1px solid var(--acier-200);border-radius:var(--r);
+  padding:12px;margin:4px 0 14px;
+}
+.pointage h3{
+  margin:0 0 10px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--acier-700);font-weight:700;
+}
+.jours{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+@media(min-width:560px){.jours{grid-template-columns:repeat(6,1fr)}}
+.jour{
+  text-align:center;border:1px solid var(--acier-200);border-radius:2px;padding:7px 2px;
+  background:var(--acier-100);
+}
+.jour .j{
+  display:block;font-family:var(--mono);font-size:9px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--acier-400);
+}
+.jour .v{
+  display:block;font-family:var(--mono);font-size:15px;font-weight:700;
+  color:var(--acier-900);margin-top:3px;
+}
+.jour .lieu{
+  display:block;font-size:10px;line-height:1.25;color:var(--acier-700);
+  margin-top:4px;padding-top:4px;border-top:1px dotted var(--acier-200);
+  overflow-wrap:anywhere;
+}
+.jour.plein{background:var(--blanc);border-left:3px solid var(--marquage)}
+.jour.zero .v{color:var(--acier-200)}
+.bilan{
+  margin-top:10px;padding-top:9px;border-top:1px solid var(--acier-100);
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;
+  font-family:var(--mono);font-size:13px;
+}
+.bilan .fait{font-size:17px;font-weight:700}
+.ecart-moins{color:var(--orange);font-weight:700}
+.ecart-plus{color:var(--vert);font-weight:700}
+.ecart-ok{color:var(--vert);font-weight:700}
+
 @media print{
   body{background:#fff;padding:0}
   .barre,.ajouter,.mini,details,.pied,.plus,.etat-sauvegarde{display:none!important}
+  .pointage{break-inside:avoid;border:1px solid #999}
   .cache{display:block!important}
   .fiche{background:#fff;color:#000;border-bottom:3px solid #000}
   .eyebrow,h1 span{color:#333}
@@ -292,6 +333,12 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
 
   <button class="ajouter" id="btn-ajouter" type="button">+ Ajouter une intervention</button>
 
+  <section class="pointage" id="pointage">
+    <h3>Total de mes heures</h3>
+    <div class="jours" id="jours"></div>
+    <div class="bilan" id="bilan"></div>
+  </section>
+
   <div class="champ-l" style="margin-top:6px">
     <label for="remarques-semaine">Remarques générales de la semaine</label>
     <textarea id="remarques-semaine" placeholder="Matériel à commander, sécurité, retards, informations pour le bureau…"></textarea>
@@ -313,9 +360,12 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
 
   <datalist id="liste-clients"></datalist>
 
-  <details id="espace-bureau">
+  <details id="espace-bureau" class="cache">
     <summary>Espace bureau — regrouper les rapports reçus</summary>
     <div class="details-corps">
+      <div class="rangee-btn" style="margin-top:12px">
+        <button class="btn-outil" id="btn-verrouiller" type="button">🔒 Verrouiller l'espace bureau</button>
+      </div>
       <p>Sélectionnez tous les fichiers .json reçus des équipes : ils sont regroupés en un seul tableau exportable vers Excel.</p>
       <div class="rangee-btn">
         <button class="btn-outil" id="btn-import-multi" type="button">Charger les rapports reçus</button>
@@ -329,7 +379,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
     </div>
   </details>
 
-  <p class="pied">Fiche interne — un fichier, aucune installation. Fonctionne hors connexion.</p>
+  <p class="pied" id="pied-version">Fiche interne — version 10 du 14/08/2026. Fonctionne hors connexion.</p>
 </main>
 
 <div class="barre">
@@ -354,7 +404,13 @@ const MAIL_DEST = "guillaume.leclercslvs@gmail.com";
    Collez entre les guillemets l'adresse du script Google (elle finit par /exec),
    obtenue à l'étape 4 de la notice. Tant que la ligne est vide, le bouton se
    contente d'ouvrir la messagerie du téléphone. */
-const ENVOI_AUTO = "https://script.google.com/macros/s/AKfycbyGqlRnLACNk63HXvRNn0U_wWmXqOgfl4frRK9vsW_TwtHDbGExKSH9Mt19nGsVrM34/exec";
+const ENVOI_AUTO = "https://script.google.com/macros/s/AKfycbzodDTqdu1wUst6FI2BHG0kTEvYbN5lkurj2eNQE7t2XZZnjB59P9DqlGMf7vDlMEVj/exec";
+
+/* CODE D'ACCÈS À L'ESPACE BUREAU
+   L'espace bureau reste invisible pour les équipes. Pour l'ouvrir, ajoutez
+   #bureau à la fin de l'adresse et saisissez ce code. Une fois ouvert, il
+   reste accessible sur votre appareil jusqu'à ce que vous le verrouilliez. */
+const CODE_BUREAU = "SLVS2026";
 
 /* CLIENTS HABITUELS
    Ils apparaissent en suggestion dès que le technicien touche le champ Client.
@@ -413,7 +469,12 @@ function nomFichier(ext){
   return `S${String(etat.semaine).padStart(2,"0")}-${etat.annee}-${t}.${ext}`;
 }
 function detailsRemplis(l){
-  return Boolean((l.materiel && l.materiel.trim()) || (l.observations && l.observations.trim()));
+  return Boolean(
+    (l.materiel && l.materiel.trim()) ||
+    (l.observations && l.observations.trim()) ||
+    (l.site && l.site.trim()) ||
+    (l.statut && l.statut !== "Terminé")
+  );
 }
 
 /* ---------- Sauvegarde automatique sur l'appareil ---------- */
@@ -469,11 +530,13 @@ function majListeClients(){
 
 /* ---------- Lignes ---------- */
 function nouvelleLigne(){
+  const maintenant = new Date();
+  const auj = maintenant.getFullYear() + "-" + String(maintenant.getMonth() + 1).padStart(2, "0") + "-" + String(maintenant.getDate()).padStart(2, "0");
   const lundi = lundiDe(etat.semaine, etat.annee);
-  const deja = etat.lignes.length;
-  const d = new Date(lundi);
-  d.setUTCDate(d.getUTCDate() + Math.min(deja, 4));
-  return { date: isoJour(d), client:"", site:"", travaux:"", heures:"", statut:"Terminé", materiel:"", observations:"" };
+  const vendredi = new Date(lundi); vendredi.setUTCDate(vendredi.getUTCDate() + 5);
+  const dateAuj = new Date(auj + "T12:00:00");
+  const dansSemaine = dateAuj >= lundi && dateAuj < vendredi;
+  return { date: dansSemaine ? auj : isoJour(lundi), client:"", site:"", travaux:"", heures:"", statut:"Terminé", materiel:"", observations:"" };
 }
 
 function rendre(){
@@ -495,18 +558,27 @@ function rendre(){
       <div class="ligne-tete">
         <span class="num">${String(i + 1).padStart(2, "0")}</span>
         <span class="ligne-titre">${esc(titre)}</span>
-        <button class="mini" type="button" data-dup="${i}" title="Dupliquer">Copier</button>
+        <button class="mini" type="button" data-dup="${i}" title="Dupliquer cette intervention">Dupliquer</button>
         <button class="mini suppr" type="button" data-del="${i}" title="Supprimer">Retirer</button>
       </div>
       <div class="ligne-corps">
-        <div class="sous-grille g3">
+        <div class="champ-l">
+          <label for="c${i}">Client</label>
+          <input id="c${i}" type="text" list="liste-clients" placeholder="Nom du client" data-champ="client" data-i="${i}" value="${esc(l.client)}">
+        </div>
+        <div class="champ-l">
+          <label for="t${i}">Ce que vous avez fait</label>
+          <textarea id="t${i}" placeholder="En quelques mots" data-champ="travaux" data-i="${i}">${esc(l.travaux)}</textarea>
+        </div>
+        <div class="champ-l">
+          <label for="h${i}">Heures passées</label>
+          <input id="h${i}" type="number" step="0.5" min="0" inputmode="decimal" placeholder="7,5" data-champ="heures" data-i="${i}" value="${esc(l.heures)}">
+        </div>
+        <button class="plus" type="button" data-plus="${i}">${detailsRemplis(l) ? "− Masquer les détails" : "+ Ajouter un détail (facultatif)"}</button>
+        <div class="sous-grille g2 detail-sup${detailsRemplis(l) ? "" : " cache"}" data-detail="${i}">
           <div class="champ-l">
             <label for="d${i}">Date</label>
             <input id="d${i}" type="date" data-champ="date" data-i="${i}" value="${esc(l.date)}">
-          </div>
-          <div class="champ-l">
-            <label for="h${i}">Heures passées</label>
-            <input id="h${i}" type="number" step="0.5" min="0" inputmode="decimal" placeholder="7,5" data-champ="heures" data-i="${i}" value="${esc(l.heures)}">
           </div>
           <div class="champ-l">
             <label for="s${i}">Avancement</label>
@@ -514,30 +586,17 @@ function rendre(){
               ${STATUTS.map(s => `<option${s === l.statut ? " selected" : ""}>${s}</option>`).join("")}
             </select>
           </div>
-        </div>
-        <div class="sous-grille g2">
-          <div class="champ-l">
-            <label for="c${i}">Client</label>
-            <input id="c${i}" type="text" list="liste-clients" placeholder="Nom du client" data-champ="client" data-i="${i}" value="${esc(l.client)}">
-          </div>
           <div class="champ-l">
             <label for="si${i}">Site / atelier / repère</label>
             <input id="si${i}" type="text" placeholder="Usine, zone, ligne…" data-champ="site" data-i="${i}" value="${esc(l.site)}">
           </div>
-        </div>
-        <div class="champ-l">
-          <label for="t${i}">Travaux réalisés</label>
-          <textarea id="t${i}" placeholder="Ce qui a été fait sur place" data-champ="travaux" data-i="${i}">${esc(l.travaux)}</textarea>
-        </div>
-        <button class="plus" type="button" data-plus="${i}">${detailsRemplis(l) ? "− Masquer matériel et observations" : "+ Matériel, observations"}</button>
-        <div class="sous-grille g2 detail-sup${detailsRemplis(l) ? "" : " cache"}" data-detail="${i}">
           <div class="champ-l">
-            <label for="m${i}">Matériel / fournitures utilisés</label>
-            <textarea id="m${i}" placeholder="Tubes, coudes, brides, consommables…" data-champ="materiel" data-i="${i}">${esc(l.materiel)}</textarea>
+            <label for="m${i}">Matériel utilisé</label>
+            <textarea id="m${i}" placeholder="Tubes, coudes, brides…" data-champ="materiel" data-i="${i}">${esc(l.materiel)}</textarea>
           </div>
           <div class="champ-l">
-            <label for="o${i}">Observations / reste à faire</label>
-            <textarea id="o${i}" placeholder="Point à signaler, travaux à prévoir…" data-champ="observations" data-i="${i}">${esc(l.observations)}</textarea>
+            <label for="o${i}">À prévoir</label>
+            <textarea id="o${i}" placeholder="Point à signaler" data-champ="observations" data-i="${i}">${esc(l.observations)}</textarea>
           </div>
         </div>
       </div>`;
@@ -560,9 +619,55 @@ function appliquerCouleur(sel, statut){
 function majTotaux(){
   const h = etat.lignes.reduce((s, l) => s + (parseFloat(String(l.heures).replace(",", ".")) || 0), 0);
   const clients = new Set(etat.lignes.map(l => l.client.trim().toLowerCase()).filter(Boolean));
-  const hTxt = (Math.round(h * 100) / 100).toString().replace(".", ",");
+  const hTxt = nb(h);
   $("#totaux").innerHTML = `<b>${hTxt} h</b> · ${clients.size} client${clients.size > 1 ? "s" : ""}`;
   $("#compteur").textContent = etat.lignes.length + " ligne" + (etat.lignes.length > 1 ? "s" : "");
+  rendrePointage(h);
+}
+
+function nb(v){
+  return (Math.round(v * 100) / 100).toString().replace(".", ",");
+}
+
+function rendrePointage(total){
+  const noms = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+  const lundi = lundiDe(etat.semaine, etat.annee);
+  const parJour = new Array(6).fill(0);
+  const lieuxJour = [[], [], [], [], [], []];
+  let horsSemaine = 0;
+
+  etat.lignes.forEach(l => {
+    const d = l.date ? new Date(l.date + "T12:00:00") : null;
+    const i = d ? (d.getDay() + 6) % 7 : -1;
+    const h = parseFloat(String(l.heures).replace(",", ".")) || 0;
+    if(i >= 0 && i <= 5){
+      parJour[i] += h;
+      const lieu = (String(l.site || "").trim() || String(l.client || "").trim());
+      if(lieu && lieuxJour[i].indexOf(lieu) === -1) lieuxJour[i].push(lieu);
+    }else if(h){
+      horsSemaine += h;
+    }
+  });
+
+  $("#jours").innerHTML = noms.map((n, i) => {
+    const d = new Date(lundi);
+    d.setUTCDate(d.getUTCDate() + i);
+    const jour = String(d.getUTCDate()).padStart(2, "0") + "/" + String(d.getUTCMonth() + 1).padStart(2, "0");
+    const v = parJour[i];
+    const lieux = lieuxJour[i];
+    return `<div class="jour ${v || lieux.length ? "plein" : "zero"}">
+      <span class="j">${n} ${jour}</span>
+      <span class="v">${v ? nb(v) : "—"}</span>
+      ${lieux.length ? `<span class="lieu">${esc(lieux.join(" · "))}</span>` : ""}
+    </div>`;
+  }).join("");
+
+  const samedi = parJour[5];
+
+  $("#bilan").innerHTML =
+    `<span class="fait">${nb(total)} h</span>` +
+    `<span>${etat.lignes.length} intervention(s)${samedi ? " · dont " + nb(samedi) + " h le samedi" : ""}</span>` +
+    (horsSemaine ? `<span style="width:100%;color:var(--orange)">${nb(horsSemaine)} h sur une date hors de la semaine ${etat.semaine} : vérifiez les dates.</span>` : "");
 }
 
 /* ---------- Saisie ---------- */
@@ -956,6 +1061,49 @@ $("#zone-devis").addEventListener("click", (e) => {
   toast("Devis préparé : importez-le dans l'appli de devis.");
 });
 
+/* ---------- Accès réservé à l'espace bureau ---------- */
+const CLE_BUREAU = "acces-bureau-slvs";
+
+function bureauOuvert(){
+  try{ return localStorage.getItem(CLE_BUREAU) === "1"; }catch(err){ return false; }
+}
+function afficherBureau(ouvert){
+  $("#espace-bureau").classList.toggle("cache", !ouvert);
+}
+function demanderCode(){
+  const saisi = prompt("Code d'accès à l'espace bureau :");
+  if(saisi === null) return;
+  if(saisi.trim().toUpperCase() === CODE_BUREAU.toUpperCase()){
+    try{ localStorage.setItem(CLE_BUREAU, "1"); }catch(err){}
+    afficherBureau(true);
+    $("#espace-bureau").open = true;
+    $("#espace-bureau").scrollIntoView({ behavior:"smooth", block:"center" });
+    toast("Espace bureau ouvert sur cet appareil.");
+  }else{
+    toast("Code incorrect.");
+  }
+}
+$("#btn-verrouiller").addEventListener("click", () => {
+  try{ localStorage.removeItem(CLE_BUREAU); }catch(err){}
+  afficherBureau(false);
+  if(location.hash) history.replaceState(null, "", location.pathname + location.search);
+  toast("Espace bureau verrouillé.");
+});
+
+/* Accès de secours : 5 appuis rapprochés sur la ligne de version tout en bas.
+   Ne dépend d'aucune adresse à taper — fonctionne même depuis l'icône sur
+   l'écran d'accueil. */
+let appuisPied = 0, minuteurPied = null;
+$("#pied-version").addEventListener("click", () => {
+  appuisPied++;
+  clearTimeout(minuteurPied);
+  minuteurPied = setTimeout(() => { appuisPied = 0; }, 1500);
+  if(appuisPied >= 5){
+    appuisPied = 0;
+    demanderCode();
+  }
+});
+
 /* ---------- Démarrage ---------- */
 function remplirEnTete(){
   $("#technicien").value = etat.technicien;
@@ -966,6 +1114,9 @@ function remplirEnTete(){
 }
 (function init(){
   majListeClients();
+
+  if(bureauOuvert()) afficherBureau(true);
+  else if(location.hash.toLowerCase() === "#bureau") setTimeout(demanderCode, 300);
 
   const s = semaineISO(new Date());
   const brouillon = lireBrouillon();
