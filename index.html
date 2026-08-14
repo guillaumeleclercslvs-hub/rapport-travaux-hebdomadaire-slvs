@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rapport hebdo d'intervention</title>
+<style>
+/* ============================================================
+   RÉGLAGE RAPIDE : voir la ligne "const MAIL_DEST" dans le script
+   en bas du fichier pour mettre votre adresse e-mail par défaut.
+   ============================================================ */
+:root{
+  --acier-900:#16202B;
+  --acier-700:#2E3F4F;
+  --acier-400:#6B7C8C;
+  --acier-200:#C6D0D9;
+  --acier-100:#E3E9ED;
+  --fond:#EEF1F4;
+  --blanc:#FFFFFF;
+  --marquage:#F2B705;
+  --bleu:#1B5E8C;
+  --vert:#1F7A4D;
+  --orange:#C2410C;
+  --r:4px;
+  --mono:ui-monospace,"SFMono-Regular","Consolas","Roboto Mono",monospace;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--fond);
+  color:var(--acier-900);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.45;
+  -webkit-text-size-adjust:100%;
+  padding-bottom:120px;
+}
+.wrap{max-width:820px;margin:0 auto;padding:0 14px}
+
+/* ---------- En-tête : fiche de pointage ---------- */
+.fiche{
+  background:var(--acier-900);
+  color:var(--blanc);
+  border-bottom:6px solid var(--marquage);
+}
+.fiche-in{max-width:820px;margin:0 auto;padding:18px 14px 16px}
+.eyebrow{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--marquage);
+  margin:0 0 6px;
+}
+h1{
+  margin:0;
+  font-size:26px;
+  line-height:1.05;
+  font-weight:800;
+  letter-spacing:-.01em;
+  text-transform:uppercase;
+}
+h1 span{display:block;font-weight:400;font-size:15px;letter-spacing:.02em;color:var(--acier-200);text-transform:none;margin-top:6px}
+.identite{display:grid;grid-template-columns:1fr;gap:10px;margin-top:16px}
+@media(min-width:620px){.identite{grid-template-columns:1.2fr 1fr auto}}
+.champ label{
+  display:block;
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--acier-200);
+  margin-bottom:4px;
+}
+input,select,textarea{
+  width:100%;
+  font-family:var(--sans);
+  font-size:16px;
+  color:var(--acier-900);
+  background:var(--blanc);
+  border:1px solid var(--acier-200);
+  border-radius:var(--r);
+  padding:9px 10px;
+  min-height:42px;
+}
+textarea{min-height:60px;resize:vertical;line-height:1.35}
+input:focus,select:focus,textarea:focus{outline:3px solid var(--marquage);outline-offset:1px;border-color:var(--acier-700)}
+.semaine-box{display:flex;gap:8px;align-items:flex-end}
+.semaine-box .champ:first-child{width:96px;flex:none}
+#semaine{font-family:var(--mono);font-weight:700;text-align:center}
+
+/* ---------- Lignes d'intervention ---------- */
+.entete-liste{
+  display:flex;align-items:baseline;justify-content:space-between;
+  margin:22px 0 10px;
+}
+.entete-liste h2{
+  margin:0;font-size:13px;font-family:var(--mono);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--acier-700);font-weight:700;
+}
+.compteur{font-family:var(--mono);font-size:13px;color:var(--acier-400)}
+
+.ligne{
+  background:var(--blanc);
+  border:1px solid var(--acier-200);
+  border-left:5px solid var(--marquage);
+  border-radius:var(--r);
+  margin-bottom:12px;
+  overflow:hidden;
+}
+.ligne-tete{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;
+  background:var(--acier-100);
+  border-bottom:1px solid var(--acier-200);
+}
+.num{
+  font-family:var(--mono);font-size:12px;font-weight:700;
+  background:var(--acier-900);color:var(--marquage);
+  padding:3px 7px;border-radius:2px;letter-spacing:.05em;
+}
+.ligne-titre{
+  flex:1;min-width:0;font-size:14px;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--acier-700);
+}
+.mini{
+  border:1px solid var(--acier-200);background:var(--blanc);
+  color:var(--acier-700);font-size:12px;font-family:var(--mono);
+  padding:5px 8px;border-radius:var(--r);cursor:pointer;min-height:32px;
+}
+.mini:hover{background:var(--acier-100)}
+.mini.suppr:hover{background:#FDE7DE;border-color:var(--orange);color:var(--orange)}
+.ligne-corps{padding:12px 10px;display:grid;gap:10px;grid-template-columns:1fr}
+@media(min-width:620px){
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr 1fr 1fr}
+}
+.sous-grille{display:grid;gap:10px;grid-template-columns:1fr}
+@media(min-width:620px){.sous-grille.g2{grid-template-columns:1fr 1fr}.sous-grille.g3{grid-template-columns:1fr 1fr 1fr}}
+.champ-l label{
+  display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--acier-400);margin-bottom:4px;
+}
+.statut-terminé{border-color:var(--vert)!important}
+.statut-encours{border-color:var(--bleu)!important}
+.statut-reprendre{border-color:var(--orange)!important}
+
+.ajouter{
+  width:100%;padding:14px;margin-bottom:10px;
+  background:var(--blanc);border:2px dashed var(--acier-200);
+  border-radius:var(--r);color:var(--acier-700);
+  font-family:var(--mono);font-size:13px;letter-spacing:.08em;text-transform:uppercase;
+  cursor:pointer;min-height:52px;
+}
+.ajouter:hover{border-color:var(--marquage);color:var(--acier-900)}
+
+.vide{
+  background:var(--blanc);border:1px solid var(--acier-200);border-radius:var(--r);
+  padding:26px 16px;text-align:center;color:var(--acier-400);font-size:15px;margin-bottom:12px;
+}
+
+/* ---------- Barre d'envoi ---------- */
+.barre{
+  position:fixed;left:0;right:0;bottom:0;
+  background:var(--acier-900);color:var(--blanc);
+  border-top:4px solid var(--marquage);
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+  z-index:20;
+}
+.barre-in{max-width:820px;margin:0 auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.totaux{font-family:var(--mono);font-size:12px;color:var(--acier-200);flex:1;min-width:130px;line-height:1.3}
+.totaux b{color:var(--marquage);font-size:16px}
+.btn{
+  border:none;border-radius:var(--r);padding:12px 16px;min-height:46px;
+  font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;
+}
+.btn-primaire{background:var(--marquage);color:var(--acier-900)}
+.btn-primaire:hover{background:#ffc82a}
+.btn-second{background:transparent;color:var(--blanc);border:1px solid var(--acier-400)}
+.btn-second:hover{background:var(--acier-700)}
+
+/* ---------- Outils ---------- */
+details{
+  background:var(--blanc);border:1px solid var(--acier-200);border-radius:var(--r);
+  margin:14px 0;padding:0;
+}
+summary{
+  padding:12px 14px;cursor:pointer;font-family:var(--mono);font-size:12px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--acier-700);
+}
+summary:hover{color:var(--acier-900)}
+.details-corps{padding:0 14px 14px;border-top:1px solid var(--acier-100)}
+.details-corps p{font-size:14px;color:var(--acier-700);margin:12px 0}
+.rangee-btn{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn-outil{
+  background:var(--acier-100);border:1px solid var(--acier-200);color:var(--acier-900);
+  border-radius:var(--r);padding:10px 12px;min-height:42px;font-size:14px;cursor:pointer;font-weight:600;
+}
+.btn-outil:hover{background:var(--acier-200)}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}
+th,td{border:1px solid var(--acier-200);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:96px;
+  background:var(--acier-900);color:var(--blanc);border-left:4px solid var(--marquage);
+  padding:12px 16px;border-radius:var(--r);font-size:14px;z-index:40;
+  box-shadow:0 6px 20px rgba(22,32,43,.28);max-width:90vw;
+}
+.pied{font-size:12px;color:var(--acier-400);text-align:center;margin:18px 0 8px}
+
+.etat-sauvegarde{
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--acier-200);margin:14px 0 0;display:flex;align-items:center;gap:7px;
+}
+.etat-sauvegarde::before{
+  content:"";width:8px;height:8px;border-radius:50%;background:var(--marquage);flex:none;
+}
+.plus{
+  width:100%;background:var(--acier-100);border:1px solid var(--acier-200);
+  border-radius:var(--r);color:var(--acier-700);font-family:var(--mono);font-size:11px;
+  letter-spacing:.1em;text-transform:uppercase;padding:11px;min-height:44px;cursor:pointer;
+}
+.plus:hover{background:var(--acier-200)}
+.cache{display:none}
+
+.carte-devis{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  border:1px solid var(--acier-200);border-left:4px solid var(--bleu);
+  border-radius:var(--r);padding:10px 12px;margin-top:8px;background:var(--blanc);
+}
+.carte-devis .nom{flex:1;min-width:140px;font-weight:700;font-size:14px}
+.carte-devis .detail{font-family:var(--mono);font-size:12px;color:var(--acier-400);width:100%}
+.btn-devis{
+  background:var(--bleu);color:var(--blanc);border:none;border-radius:var(--r);
+  padding:9px 14px;min-height:40px;font-size:14px;font-weight:700;cursor:pointer;
+}
+.btn-devis:hover{background:#17527a}
+
+@media print{
+  body{background:#fff;padding:0}
+  .barre,.ajouter,.mini,details,.pied,.plus,.etat-sauvegarde{display:none!important}
+  .cache{display:block!important}
+  .fiche{background:#fff;color:#000;border-bottom:3px solid #000}
+  .eyebrow,h1 span{color:#333}
+  .ligne{break-inside:avoid;border:1px solid #999;border-left:4px solid #000}
+  input,select,textarea{border:none;padding:0;min-height:0}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="fiche">
+  <div class="fiche-in">
+    <p class="eyebrow">Fiche hebdomadaire · Tuyauterie &amp; chaudronnerie</p>
+    <h1>Rapport d'intervention<span>À compléter en fin de semaine, puis à envoyer au bureau avec le bouton en bas de page.</span></h1>
+
+    <div class="identite">
+      <div class="champ">
+        <label for="technicien">Nom du technicien</label>
+        <input id="technicien" type="text" placeholder="Nom et prénom" autocomplete="name">
+      </div>
+      <div class="champ">
+        <label for="equipe">Équipe / binôme</label>
+        <input id="equipe" type="text" placeholder="Ex. équipe 2 – avec M. Dupont">
+      </div>
+      <div class="semaine-box">
+        <div class="champ">
+          <label for="semaine">Semaine</label>
+          <input id="semaine" type="number" min="1" max="53" inputmode="numeric">
+        </div>
+        <div class="champ">
+          <label for="annee">Année</label>
+          <input id="annee" type="number" min="2024" max="2100" inputmode="numeric">
+        </div>
+      </div>
+    </div>
+
+    <p class="etat-sauvegarde" id="etat-sauvegarde">Tout est enregistré sur ce téléphone</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="entete-liste">
+    <h2>Interventions de la semaine</h2>
+    <span class="compteur" id="compteur">0 ligne</span>
+  </div>
+
+  <div id="liste"></div>
+
+  <button class="ajouter" id="btn-ajouter" type="button">+ Ajouter une intervention</button>
+
+  <div class="champ-l" style="margin-top:6px">
+    <label for="remarques-semaine">Remarques générales de la semaine</label>
+    <textarea id="remarques-semaine" placeholder="Matériel à commander, sécurité, retards, informations pour le bureau…"></textarea>
+  </div>
+
+  <details>
+    <summary>Outils</summary>
+    <div class="details-corps">
+      <p>La fiche s'enregistre toute seule sur l'appareil au fur et à mesure : vous pouvez fermer, couper le réseau, revenir plus tard, tout est là. Après l'envoi du rapport, appuyez sur « Commencer une nouvelle semaine » pour repartir d'une fiche vide.</p>
+      <div class="rangee-btn">
+        <button class="btn-outil" id="btn-nouvelle" type="button">Commencer une nouvelle semaine</button>
+        <button class="btn-outil" id="btn-sauver" type="button">Copie de secours (.json)</button>
+        <button class="btn-outil" id="btn-charger" type="button">Recharger une copie</button>
+        <button class="btn-outil" id="btn-imprimer" type="button">Imprimer / PDF</button>
+      </div>
+      <input type="file" id="fichier-charger" accept=".json" hidden>
+    </div>
+  </details>
+
+  <datalist id="liste-clients"></datalist>
+
+  <details id="espace-bureau">
+    <summary>Espace bureau — regrouper les rapports reçus</summary>
+    <div class="details-corps">
+      <p>Sélectionnez tous les fichiers .json reçus des équipes : ils sont regroupés en un seul tableau exportable vers Excel.</p>
+      <div class="rangee-btn">
+        <button class="btn-outil" id="btn-import-multi" type="button">Charger les rapports reçus</button>
+        <button class="btn-outil" id="btn-export-consolide" type="button">Exporter le tableau (.csv)</button>
+        <button class="btn-outil" id="btn-devis" type="button">Préparer les devis par client</button>
+        <button class="btn-outil" id="btn-vider-consolide" type="button">Vider le tableau</button>
+      </div>
+      <input type="file" id="fichier-multi" accept=".json" multiple hidden>
+      <div id="zone-devis"></div>
+      <div id="tableau-consolide"></div>
+    </div>
+  </details>
+
+  <p class="pied">Fiche interne — un fichier, aucune installation. Fonctionne hors connexion.</p>
+</main>
+
+<div class="barre">
+  <div class="barre-in">
+    <div class="totaux" id="totaux">
+      <b>0 h</b> · 0 client
+    </div>
+    <button class="btn btn-second" id="btn-csv" type="button">Fichier Excel</button>
+    <button class="btn btn-second" id="btn-copier" type="button">Copier</button>
+    <button class="btn btn-primaire" id="btn-envoyer" type="button">Envoyer par e-mail</button>
+  </div>
+</div>
+
+<script>
+/* ==========================================================================
+   DESTINATAIRE DES RAPPORTS
+   Tous les rapports partent vers cette adresse.
+   ========================================================================== */
+const MAIL_DEST = "guillaume.leclercslvs@gmail.com";
+
+/* ENVOI AUTOMATIQUE VERS LE TABLEAU + LA BOÎTE MAIL
+   Collez entre les guillemets l'adresse du script Google (elle finit par /exec),
+   obtenue à l'étape 4 de la notice. Tant que la ligne est vide, le bouton se
+   contente d'ouvrir la messagerie du téléphone. */
+const ENVOI_AUTO = "https://script.google.com/macros/s/AKfycbyGqlRnLACNk63HXvRNn0U_wWmXqOgfl4frRK9vsW_TwtHDbGExKSH9Mt19nGsVrM34/exec";
+
+/* CLIENTS HABITUELS
+   Ils apparaissent en suggestion dès que le technicien touche le champ Client.
+   Ajoutez ou retirez des noms entre guillemets, séparés par des virgules. */
+const CLIENTS = [
+  "NESTLÉ FRANCE — Dieppe"
+];
+
+/* ---------- État ---------- */
+const CLE_BROUILLON = "rapport-hebdo-slvs";
+const STATUTS = ["Terminé", "En cours", "À reprogrammer"];
+let etat = { technicien:"", equipe:"", semaine:null, annee:null, remarques:"", lignes:[] };
+let consolide = [];
+
+/* ---------- Utilitaires ---------- */
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t == null ? "" : t).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function semaineISO(d){
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+  const debut = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return { semaine: Math.ceil((((t - debut) / 86400000) + 1) / 7), annee: t.getUTCFullYear() };
+}
+function lundiDe(semaine, annee){
+  const simple = new Date(Date.UTC(annee, 0, 1 + (semaine - 1) * 7));
+  const jour = simple.getUTCDay() || 7;
+  simple.setUTCDate(simple.getUTCDate() - jour + 1);
+  return simple;
+}
+function isoJour(d){ return d.toISOString().slice(0, 10); }
+function jourFr(iso){
+  if(!iso) return "";
+  const d = new Date(iso + "T12:00:00");
+  return d.toLocaleDateString("fr-FR", { weekday:"short", day:"2-digit", month:"2-digit" });
+}
+function toast(msg){
+  const anciens = document.querySelectorAll(".toast");
+  anciens.forEach(a => a.remove());
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+function telecharger(nom, contenu, type){
+  const blob = new Blob([contenu], { type: type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = nom;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+function nomFichier(ext){
+  const t = (etat.technicien || "rapport").trim().replace(/[^a-zA-Z0-9À-ÿ]+/g, "-").replace(/^-|-$/g, "");
+  return `S${String(etat.semaine).padStart(2,"0")}-${etat.annee}-${t}.${ext}`;
+}
+function detailsRemplis(l){
+  return Boolean((l.materiel && l.materiel.trim()) || (l.observations && l.observations.trim()));
+}
+
+/* ---------- Sauvegarde automatique sur l'appareil ---------- */
+let minuteur = null;
+function enregistrer(){
+  clearTimeout(minuteur);
+  minuteur = setTimeout(() => {
+    try{
+      localStorage.setItem(CLE_BROUILLON, JSON.stringify(etat));
+      const h = new Date().toLocaleTimeString("fr-FR", { hour:"2-digit", minute:"2-digit" });
+      $("#etat-sauvegarde").textContent = `Enregistré à ${h} sur cet appareil`;
+    }catch(err){
+      $("#etat-sauvegarde").textContent = "Enregistrement indisponible — utilisez la copie de secours";
+    }
+  }, 400);
+}
+function lireBrouillon(){
+  try{
+    const brut = localStorage.getItem(CLE_BROUILLON);
+    return brut ? JSON.parse(brut) : null;
+  }catch(err){ return null; }
+}
+function effacerBrouillon(){
+  try{ localStorage.removeItem(CLE_BROUILLON); }catch(err){}
+}
+
+/* ---------- Carnet de clients (se remplit tout seul) ---------- */
+const CLE_CLIENTS = "clients-connus-slvs";
+function clientsMemorises(){
+  try{
+    const brut = localStorage.getItem(CLE_CLIENTS);
+    return brut ? JSON.parse(brut) : [];
+  }catch(err){ return []; }
+}
+function memoriserClients(){
+  try{
+    const connus = clientsMemorises();
+    etat.lignes.forEach(l => {
+      const nom = (l.client || "").trim();
+      if(nom.length > 1 && !connus.some(c => c.toLowerCase() === nom.toLowerCase()) &&
+         !CLIENTS.some(c => c.toLowerCase() === nom.toLowerCase())){
+        connus.push(nom);
+      }
+    });
+    localStorage.setItem(CLE_CLIENTS, JSON.stringify(connus.sort()));
+    majListeClients();
+  }catch(err){}
+}
+function majListeClients(){
+  const tous = CLIENTS.concat(clientsMemorises());
+  $("#liste-clients").innerHTML = tous.map(c => `<option value="${esc(c)}"></option>`).join("");
+}
+
+/* ---------- Lignes ---------- */
+function nouvelleLigne(){
+  const lundi = lundiDe(etat.semaine, etat.annee);
+  const deja = etat.lignes.length;
+  const d = new Date(lundi);
+  d.setUTCDate(d.getUTCDate() + Math.min(deja, 4));
+  return { date: isoJour(d), client:"", site:"", travaux:"", heures:"", statut:"Terminé", materiel:"", observations:"" };
+}
+
+function rendre(){
+  const liste = $("#liste");
+  liste.innerHTML = "";
+
+  if(etat.lignes.length === 0){
+    const v = document.createElement("div");
+    v.className = "vide";
+    v.textContent = "Aucune intervention pour l'instant. Ajoutez la première ci-dessous.";
+    liste.appendChild(v);
+  }
+
+  etat.lignes.forEach((l, i) => {
+    const bloc = document.createElement("section");
+    bloc.className = "ligne";
+    const titre = [l.client, l.site].filter(Boolean).join(" — ") || "Nouvelle intervention";
+    bloc.innerHTML = `
+      <div class="ligne-tete">
+        <span class="num">${String(i + 1).padStart(2, "0")}</span>
+        <span class="ligne-titre">${esc(titre)}</span>
+        <button class="mini" type="button" data-dup="${i}" title="Dupliquer">Copier</button>
+        <button class="mini suppr" type="button" data-del="${i}" title="Supprimer">Retirer</button>
+      </div>
+      <div class="ligne-corps">
+        <div class="sous-grille g3">
+          <div class="champ-l">
+            <label for="d${i}">Date</label>
+            <input id="d${i}" type="date" data-champ="date" data-i="${i}" value="${esc(l.date)}">
+          </div>
+          <div class="champ-l">
+            <label for="h${i}">Heures passées</label>
+            <input id="h${i}" type="number" step="0.5" min="0" inputmode="decimal" placeholder="7,5" data-champ="heures" data-i="${i}" value="${esc(l.heures)}">
+          </div>
+          <div class="champ-l">
+            <label for="s${i}">Avancement</label>
+            <select id="s${i}" data-champ="statut" data-i="${i}">
+              ${STATUTS.map(s => `<option${s === l.statut ? " selected" : ""}>${s}</option>`).join("")}
+            </select>
+          </div>
+        </div>
+        <div class="sous-grille g2">
+          <div class="champ-l">
+            <label for="c${i}">Client</label>
+            <input id="c${i}" type="text" list="liste-clients" placeholder="Nom du client" data-champ="client" data-i="${i}" value="${esc(l.client)}">
+          </div>
+          <div class="champ-l">
+            <label for="si${i}">Site / atelier / repère</label>
+            <input id="si${i}" type="text" placeholder="Usine, zone, ligne…" data-champ="site" data-i="${i}" value="${esc(l.site)}">
+          </div>
+        </div>
+        <div class="champ-l">
+          <label for="t${i}">Travaux réalisés</label>
+          <textarea id="t${i}" placeholder="Ce qui a été fait sur place" data-champ="travaux" data-i="${i}">${esc(l.travaux)}</textarea>
+        </div>
+        <button class="plus" type="button" data-plus="${i}">${detailsRemplis(l) ? "− Masquer matériel et observations" : "+ Matériel, observations"}</button>
+        <div class="sous-grille g2 detail-sup${detailsRemplis(l) ? "" : " cache"}" data-detail="${i}">
+          <div class="champ-l">
+            <label for="m${i}">Matériel / fournitures utilisés</label>
+            <textarea id="m${i}" placeholder="Tubes, coudes, brides, consommables…" data-champ="materiel" data-i="${i}">${esc(l.materiel)}</textarea>
+          </div>
+          <div class="champ-l">
+            <label for="o${i}">Observations / reste à faire</label>
+            <textarea id="o${i}" placeholder="Point à signaler, travaux à prévoir…" data-champ="observations" data-i="${i}">${esc(l.observations)}</textarea>
+          </div>
+        </div>
+      </div>`;
+    liste.appendChild(bloc);
+
+    const sel = bloc.querySelector("select");
+    appliquerCouleur(sel, l.statut);
+  });
+
+  majTotaux();
+}
+
+function appliquerCouleur(sel, statut){
+  sel.classList.remove("statut-terminé", "statut-encours", "statut-reprendre");
+  if(statut === "Terminé") sel.classList.add("statut-terminé");
+  else if(statut === "En cours") sel.classList.add("statut-encours");
+  else sel.classList.add("statut-reprendre");
+}
+
+function majTotaux(){
+  const h = etat.lignes.reduce((s, l) => s + (parseFloat(String(l.heures).replace(",", ".")) || 0), 0);
+  const clients = new Set(etat.lignes.map(l => l.client.trim().toLowerCase()).filter(Boolean));
+  const hTxt = (Math.round(h * 100) / 100).toString().replace(".", ",");
+  $("#totaux").innerHTML = `<b>${hTxt} h</b> · ${clients.size} client${clients.size > 1 ? "s" : ""}`;
+  $("#compteur").textContent = etat.lignes.length + " ligne" + (etat.lignes.length > 1 ? "s" : "");
+}
+
+/* ---------- Saisie ---------- */
+$("#liste").addEventListener("input", (e) => {
+  const el = e.target;
+  const champ = el.dataset.champ;
+  if(!champ) return;
+  const i = parseInt(el.dataset.i, 10);
+  etat.lignes[i][champ] = el.value;
+  if(champ === "client" || champ === "site"){
+    const tete = el.closest(".ligne").querySelector(".ligne-titre");
+    tete.textContent = [etat.lignes[i].client, etat.lignes[i].site].filter(Boolean).join(" — ") || "Nouvelle intervention";
+  }
+  if(champ === "heures") majTotaux();
+  enregistrer();
+});
+$("#liste").addEventListener("change", (e) => {
+  if(e.target.dataset.champ === "statut"){
+    const i = parseInt(e.target.dataset.i, 10);
+    etat.lignes[i].statut = e.target.value;
+    appliquerCouleur(e.target, e.target.value);
+  }
+  enregistrer();
+});
+$("#liste").addEventListener("click", (e) => {
+  const del = e.target.dataset.del, dup = e.target.dataset.dup, plus = e.target.dataset.plus;
+  if(plus !== undefined){
+    const zone = e.target.closest(".ligne").querySelector(".detail-sup");
+    const ouvert = zone.classList.toggle("cache") === false;
+    e.target.textContent = ouvert ? "− Masquer matériel et observations" : "+ Matériel, observations";
+    return;
+  }
+  if(del !== undefined){
+    const l = etat.lignes[parseInt(del, 10)];
+    const nom = l.client || "cette ligne";
+    if(confirm(`Retirer l'intervention « ${nom} » ?`)){
+      etat.lignes.splice(parseInt(del, 10), 1);
+      rendre();
+      enregistrer();
+    }
+  }
+  if(dup !== undefined){
+    const copie = Object.assign({}, etat.lignes[parseInt(dup, 10)]);
+    etat.lignes.splice(parseInt(dup, 10) + 1, 0, copie);
+    rendre();
+    enregistrer();
+  }
+});
+
+$("#btn-ajouter").addEventListener("click", () => {
+  etat.lignes.push(nouvelleLigne());
+  rendre();
+  enregistrer();
+  const derniers = document.querySelectorAll(".ligne");
+  const dernier = derniers[derniers.length - 1];
+  dernier.scrollIntoView({ behavior:"smooth", block:"center" });
+  dernier.querySelector('input[data-champ="client"]').focus({ preventScroll:true });
+});
+
+["technicien", "equipe", "remarques-semaine"].forEach(id => {
+  $("#" + id).addEventListener("input", (e) => {
+    if(id === "remarques-semaine") etat.remarques = e.target.value;
+    else etat[id] = e.target.value;
+    enregistrer();
+  });
+});
+["semaine", "annee"].forEach(id => {
+  $("#" + id).addEventListener("change", (e) => {
+    etat[id] = parseInt(e.target.value, 10) || etat[id];
+    enregistrer();
+  });
+});
+
+/* ---------- Sorties ---------- */
+function verifier(){
+  if(!etat.technicien.trim()){
+    toast("Indiquez d'abord votre nom en haut de la fiche.");
+    $("#technicien").focus();
+    return false;
+  }
+  if(etat.lignes.length === 0){
+    toast("Ajoutez au moins une intervention.");
+    return false;
+  }
+  return true;
+}
+
+function texteRecap(){
+  const lundi = lundiDe(etat.semaine, etat.annee);
+  const vendredi = new Date(lundi); vendredi.setUTCDate(vendredi.getUTCDate() + 4);
+  const periode = `${isoJour(lundi).split("-").reverse().join("/")} au ${isoJour(vendredi).split("-").reverse().join("/")}`;
+  let t = `RAPPORT HEBDOMADAIRE — Semaine ${etat.semaine} / ${etat.annee} (${periode})\n`;
+  t += `Technicien : ${etat.technicien}\n`;
+  if(etat.equipe.trim()) t += `Équipe : ${etat.equipe}\n`;
+  t += `\n`;
+  etat.lignes.forEach((l, i) => {
+    t += `${String(i + 1).padStart(2, "0")}. ${jourFr(l.date)} — ${l.client || "client non précisé"}${l.site ? " / " + l.site : ""}\n`;
+    if(l.travaux.trim()) t += `    Travaux : ${l.travaux.replace(/\n/g, " ")}\n`;
+    t += `    Heures : ${l.heures || "0"} h — ${l.statut}\n`;
+    if(l.materiel.trim()) t += `    Matériel : ${l.materiel.replace(/\n/g, " ")}\n`;
+    if(l.observations.trim()) t += `    Observations : ${l.observations.replace(/\n/g, " ")}\n`;
+    t += `\n`;
+  });
+  const h = etat.lignes.reduce((s, l) => s + (parseFloat(String(l.heures).replace(",", ".")) || 0), 0);
+  t += `TOTAL : ${(Math.round(h * 100) / 100).toString().replace(".", ",")} h sur ${etat.lignes.length} intervention(s)\n`;
+  if(etat.remarques.trim()) t += `\nRemarques de la semaine :\n${etat.remarques}\n`;
+  return t;
+}
+
+function lignesCSV(rapports){
+  const entetes = ["Semaine","Annee","Technicien","Equipe","Date","Client","Site","Travaux","Heures","Avancement","Materiel","Observations","Remarques semaine"];
+  const cell = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""').replace(/\r?\n/g, " ") + '"';
+  const out = [entetes.map(cell).join(";")];
+  rapports.forEach(r => {
+    (r.lignes || []).forEach(l => {
+      out.push([r.semaine, r.annee, r.technicien, r.equipe, l.date, l.client, l.site, l.travaux, l.heures, l.statut, l.materiel, l.observations, r.remarques].map(cell).join(";"));
+    });
+  });
+  return "\uFEFF" + out.join("\r\n");
+}
+
+$("#btn-csv").addEventListener("click", () => {
+  if(!verifier()) return;
+  telecharger(nomFichier("csv"), lignesCSV([etat]), "text/csv;charset=utf-8");
+  toast("Fichier Excel enregistré.");
+});
+
+$("#btn-copier").addEventListener("click", async () => {
+  if(!verifier()) return;
+  const t = texteRecap();
+  try{
+    await navigator.clipboard.writeText(t);
+    toast("Récapitulatif copié — collez-le dans WhatsApp ou un e-mail.");
+  }catch(err){
+    const zone = document.createElement("textarea");
+    zone.value = t; zone.style.position = "fixed"; zone.style.opacity = "0";
+    document.body.appendChild(zone); zone.select();
+    document.execCommand("copy"); zone.remove();
+    toast("Récapitulatif copié.");
+  }
+});
+
+function ouvrirMail(objet, corps){
+  memoriserClients();
+  telecharger(nomFichier("json"), JSON.stringify(etat, null, 2), "application/json");
+  const lien = `mailto:${encodeURIComponent(MAIL_DEST)}?subject=${encodeURIComponent(objet)}&body=${encodeURIComponent(corps)}`;
+  window.location.href = lien;
+  toast("E-mail préparé : appuyez sur Envoyer dans votre messagerie.");
+}
+
+$("#btn-envoyer").addEventListener("click", async () => {
+  if(!verifier()) return;
+  const objet = `Rapport semaine ${etat.semaine} — ${etat.technicien}`;
+  const corps = texteRecap();
+
+  if(!ENVOI_AUTO){ ouvrirMail(objet, corps); return; }
+
+  const btn = $("#btn-envoyer");
+  const libelle = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Envoi…";
+  try{
+    const rep = await fetch(ENVOI_AUTO, {
+      method:"POST",
+      headers:{ "Content-Type":"text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        objet: objet,
+        rapport: corps,
+        technicien: etat.technicien,
+        equipe: etat.equipe,
+        semaine: etat.semaine,
+        annee: etat.annee,
+        remarques: etat.remarques,
+        lignes: etat.lignes
+      })
+    });
+    if(!rep.ok) throw new Error("refus du serveur");
+    memoriserClients();
+    toast("Rapport envoyé au bureau. Bonne semaine !");
+    $("#etat-sauvegarde").textContent = `Rapport de la semaine ${etat.semaine} envoyé`;
+  }catch(err){
+    toast("Envoi impossible (réseau ?). Votre messagerie prend le relais.");
+    ouvrirMail(objet, corps);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = libelle;
+  }
+});
+
+$("#btn-nouvelle").addEventListener("click", () => {
+  if(!confirm("Commencer une nouvelle fiche ? Les interventions saisies seront effacées de cet appareil.")) return;
+  const s = semaineISO(new Date());
+  etat = { technicien: etat.technicien, equipe: etat.equipe, semaine: s.semaine, annee: s.annee, remarques: "", lignes: [] };
+  etat.lignes.push(nouvelleLigne());
+  remplirEnTete();
+  rendre();
+  enregistrer();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  toast("Nouvelle fiche prête.");
+});
+$("#btn-sauver").addEventListener("click", () => {
+  telecharger(nomFichier("json"), JSON.stringify(etat, null, 2), "application/json");
+  toast("Sauvegarde enregistrée.");
+});
+$("#btn-charger").addEventListener("click", () => $("#fichier-charger").click());
+$("#fichier-charger").addEventListener("change", (e) => {
+  const f = e.target.files[0];
+  if(!f) return;
+  const lecteur = new FileReader();
+  lecteur.onload = () => {
+    try{
+      const d = JSON.parse(lecteur.result);
+      etat = Object.assign({ technicien:"", equipe:"", semaine:1, annee:2026, remarques:"", lignes:[] }, d);
+      remplirEnTete();
+      rendre();
+      enregistrer();
+      toast("Rapport rechargé.");
+    }catch(err){
+      toast("Fichier illisible : choisissez une sauvegarde .json de cette fiche.");
+    }
+  };
+  lecteur.readAsText(f);
+  e.target.value = "";
+});
+$("#btn-imprimer").addEventListener("click", () => window.print());
+
+/* ---------- Espace bureau ---------- */
+$("#btn-import-multi").addEventListener("click", () => $("#fichier-multi").click());
+$("#fichier-multi").addEventListener("change", (e) => {
+  const fichiers = Array.from(e.target.files);
+  let restants = fichiers.length;
+  if(!restants) return;
+  fichiers.forEach(f => {
+    const lecteur = new FileReader();
+    lecteur.onload = () => {
+      try{
+        const d = JSON.parse(lecteur.result);
+        if(d && Array.isArray(d.lignes)) consolide.push(d);
+      }catch(err){ /* fichier ignoré */ }
+      if(--restants === 0){ rendreConsolide(); }
+    };
+    lecteur.readAsText(f);
+  });
+  e.target.value = "";
+});
+function rendreConsolide(){
+  const zone = $("#tableau-consolide");
+  if(consolide.length === 0){ zone.innerHTML = ""; return; }
+  let lignes = 0, heures = 0;
+  let html = "<table><thead><tr><th>Sem.</th><th>Technicien</th><th>Date</th><th>Client</th><th>Travaux</th><th>H</th><th>Avancement</th></tr></thead><tbody>";
+  consolide.forEach(r => {
+    (r.lignes || []).forEach(l => {
+      lignes++;
+      heures += parseFloat(String(l.heures).replace(",", ".")) || 0;
+      html += `<tr><td>${esc(r.semaine)}</td><td>${esc(r.technicien)}</td><td>${esc(jourFr(l.date))}</td><td>${esc(l.client)}${l.site ? " / " + esc(l.site) : ""}</td><td>${esc(l.travaux)}</td><td>${esc(l.heures)}</td><td>${esc(l.statut)}</td></tr>`;
+    });
+  });
+  html += `</tbody></table><p><strong>${consolide.length} rapport(s)</strong> · ${lignes} intervention(s) · ${(Math.round(heures * 100) / 100).toString().replace(".", ",")} h au total</p>`;
+  zone.innerHTML = html;
+}
+$("#btn-export-consolide").addEventListener("click", () => {
+  if(consolide.length === 0){ toast("Chargez d'abord les rapports reçus."); return; }
+  telecharger(`recap-equipes-${new Date().toISOString().slice(0,10)}.csv`, lignesCSV(consolide), "text/csv;charset=utf-8");
+  toast("Tableau exporté.");
+});
+$("#btn-vider-consolide").addEventListener("click", () => {
+  consolide = [];
+  groupes = [];
+  $("#zone-devis").innerHTML = "";
+  rendreConsolide();
+  toast("Tableau vidé.");
+});
+
+/* ---------- Passerelle vers l'appli de devis ---------- */
+/* Tarifs repris de l'appli de devis : modifiez-les ici si besoin. */
+const TARIF_HEURE = 58;
+const TARIF_SAMEDI = 75;
+const TARIF_ETUDE = 60;
+const MARGE = 35;
+
+let groupes = [];
+
+function idAlea(){
+  return "ms" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+}
+function estSamedi(iso){
+  if(!iso) return false;
+  return new Date(iso + "T12:00:00").getDay() === 6;
+}
+function regrouperParClient(rapports){
+  const carte = new Map();
+  rapports.forEach(r => {
+    (r.lignes || []).forEach(l => {
+      const nom = (l.client || "").trim();
+      if(!nom) return;
+      const cle = nom.toLowerCase();
+      if(!carte.has(cle)){
+        carte.set(cle, { client:nom, lignes:[], sites:new Set(), semaines:new Set(), heures:0, samedi:0 });
+      }
+      const g = carte.get(cle);
+      g.lignes.push({ l:l, r:r });
+      if(l.site && l.site.trim()) g.sites.add(l.site.trim());
+      g.semaines.add(r.semaine);
+      const h = parseFloat(String(l.heures).replace(",", ".")) || 0;
+      if(estSamedi(l.date)) g.samedi += h; else g.heures += h;
+    });
+  });
+  return Array.from(carte.values());
+}
+function devisDepuis(g){
+  const semaines = Array.from(g.semaines).sort((a, b) => a - b);
+  const intitule = "S" + semaines.join("+S") + " " + g.client;
+
+  let texte = "";
+  g.lignes.forEach(({ l, r }) => {
+    const jour = l.date ? l.date.split("-").reverse().slice(0, 2).join("/") : "";
+    const lieu = l.site && l.site.trim() ? " — " + l.site.trim() : "";
+    texte += "• " + jour + lieu + " : " + (l.travaux || "").replace(/\s+/g, " ").trim();
+    if(l.statut && l.statut !== "Terminé") texte += " (" + l.statut.toLowerCase() + ")";
+    texte += "\n";
+  });
+  const restes = g.lignes.map(x => (x.l.observations || "").trim()).filter(Boolean);
+  if(restes.length) texte += "\nÀ prévoir : " + restes.join(" / ");
+
+  const travaux = [];
+  g.lignes.forEach(({ l }) => {
+    (l.materiel || "").split(/\r?\n|;/).forEach(m => {
+      const d = m.trim();
+      if(d.length > 1){
+        travaux.push({
+          id: idAlea(), categorie: "", materiel: "", ref: "",
+          prixUnitaire: 0, quantite: 1, fournisseur: true, designation: d
+        });
+      }
+    });
+  });
+  if(!travaux.length){
+    travaux.push({ id: idAlea(), categorie: "", materiel: "", ref: "", prixUnitaire: 0, quantite: 1, fournisseur: true, designation: "" });
+  }
+
+  return {
+    id: idAlea(),
+    numero: intitule,
+    date: new Date().toISOString().slice(0, 10),
+    type: "Devis",
+    mode: "Direct",
+    client: g.client,
+    donneurOrdre: "",
+    chantier: Array.from(g.sites).join(" / "),
+    dossier: g.client.toUpperCase(),
+    texte: texte.trim(),
+    marge: MARGE,
+    consommable: { montant: 0, marge: MARGE },
+    mainOeuvre: [
+      { id:"heures", poste:"Heures", nombre: Math.round(g.heures * 100) / 100, tarif: TARIF_HEURE },
+      { id:"heures_samedi", poste:"Heures samedi", nombre: Math.round(g.samedi * 100) / 100, tarif: TARIF_SAMEDI },
+      { id:"etude", poste:"Étude", nombre: 0, tarif: TARIF_ETUDE }
+    ],
+    travaux: travaux,
+    createdAt: new Date().toISOString()
+  };
+}
+
+$("#btn-devis").addEventListener("click", () => {
+  const source = consolide.length ? consolide : [etat];
+  groupes = regrouperParClient(source);
+  const zone = $("#zone-devis");
+  if(!groupes.length){
+    zone.innerHTML = "";
+    toast("Aucun client à convertir : chargez d'abord les rapports reçus.");
+    return;
+  }
+  zone.innerHTML = groupes.map((g, i) => {
+    const h = (Math.round((g.heures + g.samedi) * 100) / 100).toString().replace(".", ",");
+    return `<div class="carte-devis">
+      <span class="nom">${esc(g.client)}</span>
+      <button class="btn-devis" type="button" data-devis="${i}">Devis .json</button>
+      <span class="detail">${g.lignes.length} intervention(s) · ${h} h${g.samedi ? " dont " + g.samedi + " h samedi" : ""}${g.sites.size ? " · " + esc(Array.from(g.sites).join(" / ")) : ""}</span>
+    </div>`;
+  }).join("");
+  toast(groupes.length + " client(s) prêt(s) à passer en devis.");
+});
+
+$("#zone-devis").addEventListener("click", (e) => {
+  const i = e.target.dataset.devis;
+  if(i === undefined) return;
+  const g = groupes[parseInt(i, 10)];
+  const d = devisDepuis(g);
+  const nom = "devis-" + g.client.replace(/[^a-zA-Z0-9À-ÿ]+/g, "-").replace(/^-|-$/g, "") + ".json";
+  telecharger(nom, JSON.stringify(d, null, 2), "application/json");
+  toast("Devis préparé : importez-le dans l'appli de devis.");
+});
+
+/* ---------- Démarrage ---------- */
+function remplirEnTete(){
+  $("#technicien").value = etat.technicien;
+  $("#equipe").value = etat.equipe;
+  $("#semaine").value = etat.semaine;
+  $("#annee").value = etat.annee;
+  $("#remarques-semaine").value = etat.remarques;
+}
+(function init(){
+  majListeClients();
+
+  const s = semaineISO(new Date());
+  const brouillon = lireBrouillon();
+
+  if(brouillon && Array.isArray(brouillon.lignes) && brouillon.lignes.length){
+    etat = Object.assign({ technicien:"", equipe:"", semaine:s.semaine, annee:s.annee, remarques:"", lignes:[] }, brouillon);
+    remplirEnTete();
+    rendre();
+    const h = etat.lignes.reduce((t, l) => t + (parseFloat(String(l.heures).replace(",", ".")) || 0), 0);
+    majTotaux();
+    $("#etat-sauvegarde").textContent = `Fiche reprise : semaine ${etat.semaine}, ${etat.lignes.length} ligne(s), ${(Math.round(h*100)/100).toString().replace(".", ",")} h`;
+    if(etat.semaine !== s.semaine || etat.annee !== s.annee){
+      setTimeout(() => toast(`Cette fiche est celle de la semaine ${etat.semaine}. Pour repartir à zéro : Outils › Nouvelle semaine.`), 600);
+    }
+    return;
+  }
+
+  etat.semaine = s.semaine;
+  etat.annee = s.annee;
+  remplirEnTete();
+  etat.lignes.push(nouvelleLigne());
+  rendre();
+})();
+</script>
+</body>
+</html>
