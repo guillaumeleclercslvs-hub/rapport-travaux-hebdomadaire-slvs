@@ -10,18 +10,18 @@
    en bas du fichier pour mettre votre adresse e-mail par défaut.
    ============================================================ */
 :root{
-  --acier-900:#16202B;
-  --acier-700:#2E3F4F;
-  --acier-400:#6B7C8C;
-  --acier-200:#C6D0D9;
-  --acier-100:#E3E9ED;
-  --fond:#EEF1F4;
+  --acier-900:#1A1A1A;
+  --acier-700:#454040;
+  --acier-400:#847D7A;
+  --acier-200:#E2DCD8;
+  --acier-100:#F1ECE8;
+  --fond:#FBF7F3;
   --blanc:#FFFFFF;
-  --marquage:#F2B705;
-  --bleu:#1B5E8C;
-  --vert:#1F7A4D;
-  --orange:#C2410C;
-  --r:4px;
+  --marquage:#E8432E;
+  --bleu:#8C1D2B;
+  --vert:#2FA86A;
+  --orange:#F2622E;
+  --r:6px;
   --mono:ui-monospace,"SFMono-Regular","Consolas","Roboto Mono",monospace;
   --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
 }
@@ -175,8 +175,8 @@ input:focus,select:focus,textarea:focus{outline:3px solid var(--marquage);outlin
   border:none;border-radius:var(--r);padding:12px 16px;min-height:46px;
   font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;
 }
-.btn-primaire{background:var(--marquage);color:var(--acier-900)}
-.btn-primaire:hover{background:#ffc82a}
+.btn-primaire{background:var(--marquage);color:var(--blanc)}
+.btn-primaire:hover{background:#d13720}
 .btn-second{background:transparent;color:var(--blanc);border:1px solid var(--acier-400)}
 .btn-second:hover{background:var(--acier-700)}
 
@@ -278,6 +278,14 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
 .ecart-plus{color:var(--vert);font-weight:700}
 .ecart-ok{color:var(--vert);font-weight:700}
 
+.lien-guide{
+  display:inline-flex;align-items:center;gap:5px;
+  margin-top:12px;color:var(--marquage);font-size:13px;font-weight:700;
+  text-decoration:none;border:1px solid rgba(242,183,5,.5);border-radius:var(--r);
+  padding:7px 11px;min-height:34px;
+}
+.lien-guide:hover{background:rgba(242,183,5,.12)}
+
 @media print{
   body{background:#fff;padding:0}
   .barre,.ajouter,.mini,details,.pied,.plus,.etat-sauvegarde{display:none!important}
@@ -297,6 +305,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
   <div class="fiche-in">
     <p class="eyebrow">Fiche hebdomadaire · Tuyauterie &amp; chaudronnerie</p>
     <h1>Rapport d'intervention<span>À compléter en fin de semaine, puis à envoyer au bureau avec le bouton en bas de page.</span></h1>
+    <a class="lien-guide" href="guide.pdf" target="_blank" rel="noopener">📄 Voir le guide (PDF)</a>
 
     <div class="identite">
       <div class="champ">
@@ -353,6 +362,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
         <button class="btn-outil" id="btn-sauver" type="button">Copie de secours (.json)</button>
         <button class="btn-outil" id="btn-charger" type="button">Recharger une copie</button>
         <button class="btn-outil" id="btn-imprimer" type="button">Imprimer / PDF</button>
+        <a class="btn-outil" href="guide.pdf" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center">Guide d'utilisation (PDF)</a>
       </div>
       <input type="file" id="fichier-charger" accept=".json" hidden>
     </div>
@@ -379,7 +389,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
     </div>
   </details>
 
-  <p class="pied" id="pied-version">Fiche interne — version 10 du 14/08/2026. Fonctionne hors connexion.</p>
+  <p class="pied" id="pied-version">Fiche interne — version 15 du 14/08/2026. Fonctionne hors connexion.</p>
 </main>
 
 <div class="barre">
