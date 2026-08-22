@@ -129,6 +129,18 @@ input:focus,select:focus,textarea:focus{outline:3px solid var(--marquage);outlin
   flex:1;min-width:0;font-size:14px;font-weight:600;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--acier-700);
 }
+.ligne.reduite{margin-bottom:8px}
+.ligne.reduite .ligne-tete{cursor:pointer;background:var(--blanc);border-bottom:none}
+.ligne.reduite .ligne-titre{flex:none;max-width:38%}
+.resume-reduit{
+  flex:1;min-width:0;font-family:var(--mono);font-size:12px;color:var(--acier-400);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;margin-right:4px;
+}
+.ligne.surlignee{animation:flash-surbrillance 1.4s ease-out 1}
+@keyframes flash-surbrillance{
+  0%{box-shadow:0 0 0 3px var(--marquage)}
+  100%{box-shadow:0 0 0 0 transparent}
+}
 .mini{
   border:1px solid var(--acier-200);background:var(--blanc);
   color:var(--acier-700);font-size:12px;font-family:var(--mono);
@@ -268,8 +280,9 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
 @media(min-width:560px){.jours{grid-template-columns:repeat(6,1fr)}}
 .jour{
   text-align:center;border:1px solid var(--acier-200);border-radius:2px;padding:7px 2px;
-  background:var(--acier-100);
+  background:var(--acier-100);cursor:pointer;min-height:44px;
 }
+.jour:active{background:var(--acier-200)}
 .jour .j{
   display:block;font-family:var(--mono);font-size:9px;letter-spacing:.08em;
   text-transform:uppercase;color:var(--acier-400);
@@ -416,7 +429,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
     </div>
   </details>
 
-  <p class="pied" id="pied-version">Fiche interne — version 21 du 14/08/2026. Fonctionne hors connexion.</p>
+  <p class="pied" id="pied-version">Fiche interne — version 25 du 14/08/2026. Fonctionne hors connexion.</p>
 </main>
 
 <div class="barre">
@@ -451,7 +464,18 @@ const CODE_BUREAU = "SLVS2026";
    Ils apparaissent en suggestion dès que le technicien touche le champ Client.
    Ajoutez ou retirez des noms entre guillemets, séparés par des virgules. */
 const CLIENTS = [
-  "NESTLÉ FRANCE — Dieppe"
+  "NESTLÉ FRANCE — Dieppe",
+  "LUNOR",
+  "ALPINE",
+  "EURIAL",
+  "EURIAL — Quincampoix",
+  "ATEMAX",
+  "VANDEPUTTE",
+  "KERAGLASS",
+  "DELIFRANCE",
+  "QUIBEL",
+  "AIRFLUX",
+  "DELPIERRE"
 ];
 
 /* ---------- État ---------- */
@@ -580,8 +604,10 @@ function nouvelleLigne(){
   const vendredi = new Date(lundi); vendredi.setUTCDate(vendredi.getUTCDate() + 5);
   const dateAuj = new Date(auj + "T12:00:00");
   const dansSemaine = dateAuj >= lundi && dateAuj < vendredi;
-  return { date: dansSemaine ? auj : isoJour(lundi), client:"", site:"", travaux:"", heures:"", statut:"Terminé", materiel:"", observations:"" };
+  return { id: idAlea(), date: dansSemaine ? auj : isoJour(lundi), client:"", donneurOrdre:"", site:"", travaux:"", heures:"", statut:"Terminé", materiel:"", observations:"" };
 }
+
+let reduites = new Set();
 
 function rendre(){
   const liste = $("#liste");
@@ -595,20 +621,46 @@ function rendre(){
   }
 
   etat.lignes.forEach((l, i) => {
+    if(!l.id) l.id = idAlea();
     const bloc = document.createElement("section");
     bloc.className = "ligne";
+    bloc.dataset.date = l.date || "";
+    bloc.dataset.id = l.id;
     const titre = [l.client, l.site].filter(Boolean).join(" — ") || "Nouvelle intervention";
+    const estReduite = reduites.has(l.id);
+
+    if(estReduite){
+      const h = l.heures ? nb(parseFloat(String(l.heures).replace(",", "."))) + " h" : "";
+      bloc.classList.add("reduite");
+      bloc.innerHTML = `
+        <div class="ligne-tete" data-reduire="${i}" role="button">
+          <span class="num">${String(i + 1).padStart(2, "0")}</span>
+          <span class="ligne-titre">${esc(titre)}</span>
+          <span class="resume-reduit">${h}${l.date ? " · " + esc(jourFr(l.date)) : ""}</span>
+          <button class="mini" type="button" data-reduire="${i}" title="Développer">▾</button>
+        </div>`;
+      liste.appendChild(bloc);
+      return;
+    }
+
     bloc.innerHTML = `
       <div class="ligne-tete">
         <span class="num">${String(i + 1).padStart(2, "0")}</span>
         <span class="ligne-titre">${esc(titre)}</span>
+        <button class="mini" type="button" data-reduire="${i}" title="Réduire cette intervention">▴ Réduire</button>
         <button class="mini" type="button" data-dup="${i}" title="Dupliquer cette intervention">Dupliquer</button>
         <button class="mini suppr" type="button" data-del="${i}" title="Supprimer">Retirer</button>
       </div>
       <div class="ligne-corps">
-        <div class="champ-l">
-          <label for="c${i}">Client</label>
-          <input id="c${i}" type="text" list="liste-clients" placeholder="Nom du client" data-champ="client" data-i="${i}" value="${esc(l.client)}">
+        <div class="sous-grille g2">
+          <div class="champ-l">
+            <label for="c${i}">Client</label>
+            <input id="c${i}" type="text" list="liste-clients" placeholder="Nom du client" data-champ="client" data-i="${i}" value="${esc(l.client)}">
+          </div>
+          <div class="champ-l">
+            <label for="do${i}">Donneur d'ordre</label>
+            <input id="do${i}" type="text" placeholder="Contact / responsable" data-champ="donneurOrdre" data-i="${i}" value="${esc(l.donneurOrdre)}">
+          </div>
         </div>
         <div class="champ-l">
           <label for="t${i}">Ce que vous avez fait</label>
@@ -712,7 +764,7 @@ function rendrePointage(total){
     const jour = String(d.getUTCDate()).padStart(2, "0") + "/" + String(d.getUTCMonth() + 1).padStart(2, "0");
     const v = parJour[i];
     const lieux = lieuxJour[i];
-    return `<div class="jour ${v || lieux.length ? "plein" : "zero"}">
+    return `<div class="jour ${v || lieux.length ? "plein" : "zero"}" data-jourclic="${isoJour(d)}" role="button">
       <span class="j">${n} ${jour}</span>
       <span class="v">${v ? nb(v) : "—"}</span>
       ${lieux.length ? `<span class="lieu">${esc(lieux.join(" · "))}</span>` : ""}
@@ -751,6 +803,15 @@ $("#liste").addEventListener("change", (e) => {
 });
 $("#liste").addEventListener("click", (e) => {
   const del = e.target.dataset.del, dup = e.target.dataset.dup, plus = e.target.dataset.plus, jourchip = e.target.dataset.jourchip;
+  const reduire = e.target.closest("[data-reduire]") ? e.target.closest("[data-reduire]").dataset.reduire : undefined;
+  if(reduire !== undefined){
+    const i = parseInt(reduire, 10);
+    const l = etat.lignes[i];
+    if(!l.id) l.id = idAlea();
+    if(reduites.has(l.id)) reduites.delete(l.id); else reduites.add(l.id);
+    rendre();
+    return;
+  }
   if(jourchip !== undefined){
     const i = parseInt(jourchip, 10);
     const j = parseInt(e.target.dataset.j, 10);
@@ -766,7 +827,7 @@ $("#liste").addEventListener("click", (e) => {
       toast(`Retiré du ${NOMS_JOURS[j]}.`);
       return;
     }
-    const copie = Object.assign({}, source, { date: nouvelleDate });
+    const copie = Object.assign({}, source, { id: idAlea(), date: nouvelleDate });
     etat.lignes.splice(i + 1, 0, copie);
     rendre();
     enregistrer();
@@ -789,11 +850,34 @@ $("#liste").addEventListener("click", (e) => {
     }
   }
   if(dup !== undefined){
-    const copie = Object.assign({}, etat.lignes[parseInt(dup, 10)]);
+    const copie = Object.assign({}, etat.lignes[parseInt(dup, 10)], { id: idAlea() });
     etat.lignes.splice(parseInt(dup, 10) + 1, 0, copie);
     rendre();
     enregistrer();
   }
+});
+
+$("#jours").addEventListener("click", (e) => {
+  const jourEl = e.target.closest("[data-jourclic]");
+  if(!jourEl) return;
+  const iso = jourEl.dataset.jourclic;
+  const index = etat.lignes.findIndex(l => l.date === iso);
+  if(index === -1){
+    toast("Aucune intervention à cette date.");
+    return;
+  }
+  if(reduites.size){
+    etat.lignes.forEach(l => { if(l.date === iso && l.id) reduites.delete(l.id); });
+    rendre();
+  }
+  requestAnimationFrame(() => {
+    const cible = document.querySelector(`.ligne[data-date="${iso}"]`);
+    if(cible){
+      cible.scrollIntoView({ behavior:"smooth", block:"center" });
+      cible.classList.add("surlignee");
+      setTimeout(() => cible.classList.remove("surlignee"), 1500);
+    }
+  });
 });
 
 $("#btn-ajouter").addEventListener("click", () => {
@@ -872,6 +956,7 @@ function texteRecap(){
   t += `\n`;
   etat.lignes.forEach((l, i) => {
     t += `${String(i + 1).padStart(2, "0")}. ${jourFr(l.date)} — ${l.client || "client non précisé"}${l.site ? " / " + l.site : ""}\n`;
+    if((l.donneurOrdre || "").trim()) t += `    Donneur d'ordre : ${l.donneurOrdre}\n`;
     if(l.travaux.trim()) t += `    Travaux : ${l.travaux.replace(/\n/g, " ")}\n`;
     t += `    Heures : ${l.heures || "0"} h — ${l.statut}\n`;
     if(l.materiel.trim()) t += `    Matériel : ${l.materiel.replace(/\n/g, " ")}\n`;
@@ -885,12 +970,12 @@ function texteRecap(){
 }
 
 function lignesCSV(rapports){
-  const entetes = ["Semaine","Annee","Technicien","Equipe","Date","Client","Site","Travaux","Heures","Avancement","Materiel","Observations","Remarques semaine"];
+  const entetes = ["Semaine","Annee","Technicien","Equipe","Date","Client","Donneur d'ordre","Site","Travaux","Heures","Avancement","Materiel","Observations","Remarques semaine"];
   const cell = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""').replace(/\r?\n/g, " ") + '"';
   const out = [entetes.map(cell).join(";")];
   rapports.forEach(r => {
     (r.lignes || []).forEach(l => {
-      out.push([r.semaine, r.annee, r.technicien, r.equipe, l.date, l.client, l.site, l.travaux, l.heures, l.statut, l.materiel, l.observations, r.remarques].map(cell).join(";"));
+      out.push([r.semaine, r.annee, r.technicien, r.equipe, l.date, l.client, l.donneurOrdre, l.site, l.travaux, l.heures, l.statut, l.materiel, l.observations, r.remarques].map(cell).join(";"));
     });
   });
   return "\uFEFF" + out.join("\r\n");
@@ -1115,6 +1200,8 @@ function devisDepuis(g){
     travaux.push({ id: idAlea(), categorie: "", materiel: "", ref: "", prixUnitaire: 0, quantite: 1, fournisseur: true, designation: "" });
   }
 
+  const donneurOrdre = (g.lignes.map(x => (x.l.donneurOrdre || "").trim()).find(Boolean)) || "";
+
   return {
     id: idAlea(),
     numero: intitule,
@@ -1122,7 +1209,7 @@ function devisDepuis(g){
     type: "Devis",
     mode: "Direct",
     client: g.client,
-    donneurOrdre: "",
+    donneurOrdre: donneurOrdre,
     chantier: Array.from(g.sites).join(" / "),
     dossier: g.client.toUpperCase(),
     texte: texte.trim(),
