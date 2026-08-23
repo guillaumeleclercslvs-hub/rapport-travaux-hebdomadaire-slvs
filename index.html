@@ -444,7 +444,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
     </div>
   </details>
 
-  <p class="pied" id="pied-version">Fiche interne — version 26 du 14/08/2026. Fonctionne hors connexion.</p>
+  <p class="pied" id="pied-version">Fiche interne — version 27 du 14/08/2026. Fonctionne hors connexion.</p>
 </main>
 
 <div class="barre">
@@ -619,7 +619,7 @@ function nouvelleLigne(){
   const vendredi = new Date(lundi); vendredi.setUTCDate(vendredi.getUTCDate() + 5);
   const dateAuj = new Date(auj + "T12:00:00");
   const dansSemaine = dateAuj >= lundi && dateAuj < vendredi;
-  return { id: idAlea(), date: dansSemaine ? auj : isoJour(lundi), client:"", donneurOrdre:"", site:"", travaux:"", heures:"", statut:"Terminé", materiel:"", observations:"" };
+  return { id: idAlea(), date: dansSemaine ? auj : isoJour(lundi), client:"", donneurOrdre:"", type:"", numero:"", site:"", travaux:"", heures:"", statut:"Terminé", materiel:"", observations:"" };
 }
 
 let reduites = new Set();
@@ -675,6 +675,20 @@ function rendre(){
           <div class="champ-l">
             <label for="do${i}">Donneur d'ordre</label>
             <input id="do${i}" type="text" placeholder="Contact / responsable" data-champ="donneurOrdre" data-i="${i}" value="${esc(l.donneurOrdre)}">
+          </div>
+        </div>
+        <div class="sous-grille g2">
+          <div class="champ-l">
+            <label for="ty${i}">Devis ou régie ?</label>
+            <select id="ty${i}" data-champ="type" data-i="${i}">
+              <option value=""${!l.type ? " selected" : ""}>—</option>
+              <option value="Devis"${l.type === "Devis" ? " selected" : ""}>Devis</option>
+              <option value="Régie"${l.type === "Régie" ? " selected" : ""}>Régie</option>
+            </select>
+          </div>
+          <div class="champ-l">
+            <label for="nu${i}">N° devis / régie</label>
+            <input id="nu${i}" type="text" placeholder="Ex. 2026-045" data-champ="numero" data-i="${i}" value="${esc(l.numero)}">
           </div>
         </div>
         <div class="champ-l">
@@ -809,9 +823,12 @@ $("#liste").addEventListener("input", (e) => {
   enregistrer();
 });
 $("#liste").addEventListener("change", (e) => {
-  if(e.target.dataset.champ === "statut"){
+  const champ = e.target.dataset.champ;
+  if(champ){
     const i = parseInt(e.target.dataset.i, 10);
-    etat.lignes[i].statut = e.target.value;
+    etat.lignes[i][champ] = e.target.value;
+  }
+  if(champ === "statut"){
     appliquerCouleur(e.target, e.target.value);
   }
   enregistrer();
@@ -972,6 +989,7 @@ function texteRecap(){
   etat.lignes.forEach((l, i) => {
     t += `${String(i + 1).padStart(2, "0")}. ${jourFr(l.date)} — ${l.client || "client non précisé"}${l.site ? " / " + l.site : ""}\n`;
     if((l.donneurOrdre || "").trim()) t += `    Donneur d'ordre : ${l.donneurOrdre}\n`;
+    if((l.type || "").trim()) t += `    ${l.type}${(l.numero || "").trim() ? " n° " + l.numero : ""}\n`;
     if(l.travaux.trim()) t += `    Travaux : ${l.travaux.replace(/\n/g, " ")}\n`;
     t += `    Heures : ${l.heures || "0"} h — ${l.statut}\n`;
     if(l.materiel.trim()) t += `    Matériel : ${l.materiel.replace(/\n/g, " ")}\n`;
@@ -985,12 +1003,12 @@ function texteRecap(){
 }
 
 function lignesCSV(rapports){
-  const entetes = ["Semaine","Annee","Technicien","Equipe","Date","Client","Donneur d'ordre","Site","Travaux","Heures","Avancement","Materiel","Observations","Remarques semaine"];
+  const entetes = ["Semaine","Annee","Technicien","Equipe","Date","Client","Donneur d'ordre","Type","Numero","Site","Travaux","Heures","Avancement","Materiel","Observations","Remarques semaine"];
   const cell = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""').replace(/\r?\n/g, " ") + '"';
   const out = [entetes.map(cell).join(";")];
   rapports.forEach(r => {
     (r.lignes || []).forEach(l => {
-      out.push([r.semaine, r.annee, r.technicien, r.equipe, l.date, l.client, l.donneurOrdre, l.site, l.travaux, l.heures, l.statut, l.materiel, l.observations, r.remarques].map(cell).join(";"));
+      out.push([r.semaine, r.annee, r.technicien, r.equipe, l.date, l.client, l.donneurOrdre, l.type, l.numero, l.site, l.travaux, l.heures, l.statut, l.materiel, l.observations, r.remarques].map(cell).join(";"));
     });
   });
   return "\uFEFF" + out.join("\r\n");
@@ -1186,7 +1204,8 @@ function regrouperParClient(rapports){
 }
 function devisDepuis(g){
   const semaines = Array.from(g.semaines).sort((a, b) => a - b);
-  const intitule = "S" + semaines.join("+S") + " " + g.client;
+  const numeroExistant = (g.lignes.map(x => (x.l.numero || "").trim()).find(Boolean)) || "";
+  const intitule = numeroExistant || ("S" + semaines.join("+S") + " " + g.client);
 
   let texte = "";
   g.lignes.forEach(({ l, r }) => {
