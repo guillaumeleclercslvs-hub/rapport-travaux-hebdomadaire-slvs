@@ -234,6 +234,11 @@ summary:hover{color:var(--acier-900)}
 table{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}
 th,td{border:1px solid var(--acier-200);padding:6px 8px;text-align:left;vertical-align:top}
 th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.saisie-numero{
+  width:100%;min-width:90px;border:1px solid var(--acier-200);border-radius:3px;
+  padding:5px 6px;font-size:13px;font-family:var(--sans);color:var(--acier-900);background:var(--blanc);
+}
+.saisie-numero:focus{border-color:var(--marquage);outline:2px solid rgba(232,67,46,.18)}
 
 .toast{
   position:fixed;left:50%;transform:translateX(-50%);bottom:96px;
@@ -444,7 +449,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
     </div>
   </details>
 
-  <p class="pied" id="pied-version">Fiche interne — version 27 du 14/08/2026. Fonctionne hors connexion.</p>
+  <p class="pied" id="pied-version">Fiche interne — version 28 du 14/08/2026. Fonctionne hors connexion.</p>
 </main>
 
 <div class="barre">
@@ -1142,17 +1147,25 @@ function rendreConsolide(){
   const zone = $("#tableau-consolide");
   if(consolide.length === 0){ zone.innerHTML = ""; return; }
   let lignes = 0, heures = 0;
-  let html = "<table><thead><tr><th>Sem.</th><th>Technicien</th><th>Date</th><th>Client</th><th>Travaux</th><th>H</th><th>Avancement</th></tr></thead><tbody>";
-  consolide.forEach(r => {
-    (r.lignes || []).forEach(l => {
+  let html = "<table><thead><tr><th>Sem.</th><th>Technicien</th><th>Date</th><th>Client</th><th>Travaux</th><th>H</th><th>Avancement</th><th>N° devis / régie</th></tr></thead><tbody>";
+  consolide.forEach((r, ri) => {
+    (r.lignes || []).forEach((l, li) => {
       lignes++;
       heures += parseFloat(String(l.heures).replace(",", ".")) || 0;
-      html += `<tr><td>${esc(r.semaine)}</td><td>${esc(r.technicien)}</td><td>${esc(jourFr(l.date))}</td><td>${esc(l.client)}${l.site ? " / " + esc(l.site) : ""}</td><td>${esc(l.travaux)}</td><td>${esc(l.heures)}</td><td>${esc(l.statut)}</td></tr>`;
+      html += `<tr><td>${esc(r.semaine)}</td><td>${esc(r.technicien)}</td><td>${esc(jourFr(l.date))}</td><td>${esc(l.client)}${l.site ? " / " + esc(l.site) : ""}</td><td>${esc(l.travaux)}</td><td>${esc(l.heures)}</td><td>${esc(l.statut)}</td><td><input type="text" class="saisie-numero" placeholder="N° devis" data-ri="${ri}" data-li="${li}" value="${esc(l.numero || "")}"></td></tr>`;
     });
   });
   html += `</tbody></table><p><strong>${consolide.length} rapport(s)</strong> · ${lignes} intervention(s) · ${(Math.round(heures * 100) / 100).toString().replace(".", ",")} h au total</p>`;
   zone.innerHTML = html;
 }
+$("#tableau-consolide").addEventListener("input", (e) => {
+  if(!e.target.classList.contains("saisie-numero")) return;
+  const ri = parseInt(e.target.dataset.ri, 10);
+  const li = parseInt(e.target.dataset.li, 10);
+  if(consolide[ri] && consolide[ri].lignes && consolide[ri].lignes[li]){
+    consolide[ri].lignes[li].numero = e.target.value;
+  }
+});
 $("#btn-export-consolide").addEventListener("click", () => {
   if(consolide.length === 0){ toast("Chargez d'abord les rapports reçus."); return; }
   telecharger(`recap-equipes-${new Date().toISOString().slice(0,10)}.csv`, lignesCSV(consolide), "text/csv;charset=utf-8");
