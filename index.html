@@ -239,6 +239,10 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
   padding:5px 6px;font-size:13px;font-family:var(--sans);color:var(--acier-900);background:var(--blanc);
 }
 .saisie-numero:focus{border-color:var(--marquage);outline:2px solid rgba(232,67,46,.18)}
+.ligne-exclue{opacity:.45}
+.ligne-exclue td{text-decoration:line-through;text-decoration-color:var(--acier-400)}
+.ligne-exclue td:first-child,.ligne-exclue td:last-child{text-decoration:none}
+.case-inclure{width:18px;height:18px;cursor:pointer}
 
 .toast{
   position:fixed;left:50%;transform:translateX(-50%);bottom:96px;
@@ -449,7 +453,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
     </div>
   </details>
 
-  <p class="pied" id="pied-version">Fiche interne — version 28 du 14/08/2026. Fonctionne hors connexion.</p>
+  <p class="pied" id="pied-version">Fiche interne — version 29 du 14/08/2026. Fonctionne hors connexion.</p>
 </main>
 
 <div class="barre">
@@ -1147,15 +1151,16 @@ function rendreConsolide(){
   const zone = $("#tableau-consolide");
   if(consolide.length === 0){ zone.innerHTML = ""; return; }
   let lignes = 0, heures = 0;
-  let html = "<table><thead><tr><th>Sem.</th><th>Technicien</th><th>Date</th><th>Client</th><th>Travaux</th><th>H</th><th>Avancement</th><th>N° devis / régie</th></tr></thead><tbody>";
+  let html = "<table><thead><tr><th>Devis ?</th><th>Sem.</th><th>Technicien</th><th>Date</th><th>Client</th><th>Travaux</th><th>H</th><th>Avancement</th><th>N° devis / régie</th></tr></thead><tbody>";
   consolide.forEach((r, ri) => {
     (r.lignes || []).forEach((l, li) => {
       lignes++;
       heures += parseFloat(String(l.heures).replace(",", ".")) || 0;
-      html += `<tr><td>${esc(r.semaine)}</td><td>${esc(r.technicien)}</td><td>${esc(jourFr(l.date))}</td><td>${esc(l.client)}${l.site ? " / " + esc(l.site) : ""}</td><td>${esc(l.travaux)}</td><td>${esc(l.heures)}</td><td>${esc(l.statut)}</td><td><input type="text" class="saisie-numero" placeholder="N° devis" data-ri="${ri}" data-li="${li}" value="${esc(l.numero || "")}"></td></tr>`;
+      const coche = l.inclureDevis !== false;
+      html += `<tr class="${coche ? "" : "ligne-exclue"}"><td style="text-align:center"><input type="checkbox" class="case-inclure" data-ri="${ri}" data-li="${li}" ${coche ? "checked" : ""}></td><td>${esc(r.semaine)}</td><td>${esc(r.technicien)}</td><td>${esc(jourFr(l.date))}</td><td>${esc(l.client)}${l.site ? " / " + esc(l.site) : ""}</td><td>${esc(l.travaux)}</td><td>${esc(l.heures)}</td><td>${esc(l.statut)}</td><td><input type="text" class="saisie-numero" placeholder="N° devis" data-ri="${ri}" data-li="${li}" value="${esc(l.numero || "")}"></td></tr>`;
     });
   });
-  html += `</tbody></table><p><strong>${consolide.length} rapport(s)</strong> · ${lignes} intervention(s) · ${(Math.round(heures * 100) / 100).toString().replace(".", ",")} h au total</p>`;
+  html += `</tbody></table><p><strong>${consolide.length} rapport(s)</strong> · ${lignes} intervention(s) · ${(Math.round(heures * 100) / 100).toString().replace(".", ",")} h au total · <span style="color:var(--acier-400)">décochez une ligne pour l'exclure du devis</span></p>`;
   zone.innerHTML = html;
 }
 $("#tableau-consolide").addEventListener("input", (e) => {
@@ -1164,6 +1169,15 @@ $("#tableau-consolide").addEventListener("input", (e) => {
   const li = parseInt(e.target.dataset.li, 10);
   if(consolide[ri] && consolide[ri].lignes && consolide[ri].lignes[li]){
     consolide[ri].lignes[li].numero = e.target.value;
+  }
+});
+$("#tableau-consolide").addEventListener("change", (e) => {
+  if(!e.target.classList.contains("case-inclure")) return;
+  const ri = parseInt(e.target.dataset.ri, 10);
+  const li = parseInt(e.target.dataset.li, 10);
+  if(consolide[ri] && consolide[ri].lignes && consolide[ri].lignes[li]){
+    consolide[ri].lignes[li].inclureDevis = e.target.checked;
+    e.target.closest("tr").classList.toggle("ligne-exclue", !e.target.checked);
   }
 });
 $("#btn-export-consolide").addEventListener("click", () => {
@@ -1199,6 +1213,7 @@ function regrouperParClient(rapports){
   const carte = new Map();
   rapports.forEach(r => {
     (r.lignes || []).forEach(l => {
+      if(l.inclureDevis === false) return;
       const nom = (l.client || "").trim();
       if(!nom) return;
       const cle = nom.toLowerCase();
