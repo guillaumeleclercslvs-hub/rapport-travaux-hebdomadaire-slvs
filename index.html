@@ -508,7 +508,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
     </div>
   </details>
 
-  <p class="pied" id="pied-version">Fiche interne — version 34 du 14/08/2026. Fonctionne hors connexion.</p>
+  <p class="pied" id="pied-version">Fiche interne — version 35 du 14/08/2026. Fonctionne hors connexion.</p>
 </main>
 
 <div class="barre">
@@ -690,8 +690,10 @@ function nouvelleLigne(){
   const vendredi = new Date(lundi); vendredi.setUTCDate(vendredi.getUTCDate() + 5);
   const dateAuj = new Date(auj + "T12:00:00");
   const dansSemaine = dateAuj >= lundi && dateAuj < vendredi;
+  const premiereLigne = etat.lignes.length === 0;
+  const dateParDefaut = premiereLigne ? isoJour(lundi) : (dansSemaine ? auj : isoJour(lundi));
   const nomEquipe = (etat.equipe || "").trim();
-  return { id: idAlea(), date: dansSemaine ? auj : isoJour(lundi), client:"", donneurOrdre:"", type:"", numero:"", site:"", travaux:"", heures:"", collegues: nomEquipe ? [{ nom: nomEquipe, heures: "" }] : [], statut:"Terminé", materiel:"", observations:"" };
+  return { id: idAlea(), date: dateParDefaut, client:"", donneurOrdre:"", type:"", numero:"", site:"", travaux:"", heures:"", collegues: nomEquipe ? [{ nom: nomEquipe, heures: "" }] : [], statut:"Terminé", materiel:"", observations:"" };
 }
 
 let reduites = new Set();
