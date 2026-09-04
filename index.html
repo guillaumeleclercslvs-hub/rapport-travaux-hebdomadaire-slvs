@@ -508,7 +508,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
     </div>
   </details>
 
-  <p class="pied" id="pied-version">Fiche interne — version 32 du 14/08/2026. Fonctionne hors connexion.</p>
+  <p class="pied" id="pied-version">Fiche interne — version 33 du 14/08/2026. Fonctionne hors connexion.</p>
 </main>
 
 <div class="barre">
@@ -690,7 +690,8 @@ function nouvelleLigne(){
   const vendredi = new Date(lundi); vendredi.setUTCDate(vendredi.getUTCDate() + 5);
   const dateAuj = new Date(auj + "T12:00:00");
   const dansSemaine = dateAuj >= lundi && dateAuj < vendredi;
-  return { id: idAlea(), date: dansSemaine ? auj : isoJour(lundi), client:"", donneurOrdre:"", type:"", numero:"", site:"", travaux:"", heures:"", collegues:[], statut:"Terminé", materiel:"", observations:"" };
+  const nomEquipe = (etat.equipe || "").trim();
+  return { id: idAlea(), date: dansSemaine ? auj : isoJour(lundi), client:"", donneurOrdre:"", type:"", numero:"", site:"", travaux:"", heures:"", collegues: nomEquipe ? [{ nom: nomEquipe, heures: "" }] : [], statut:"Terminé", materiel:"", observations:"" };
 }
 
 let reduites = new Set();
@@ -956,8 +957,16 @@ $("#liste").addEventListener("input", (e) => {
   }
   if(champ === "heures"){
     majTotaux();
+    const l = etat.lignes[i];
+    (l.collegues || []).forEach((p, pi) => {
+      if(p.heures === "" || p.heures == null){
+        p.heures = el.value;
+        const champPersonneEl = document.querySelector(`input[data-champ-personne="heures"][data-i="${i}"][data-p="${pi}"]`);
+        if(champPersonneEl) champPersonneEl.value = el.value;
+      }
+    });
     const noteEl = el.closest(".ligne").querySelector(".note-binome b");
-    if(noteEl) noteEl.textContent = nb(heuresTotalesLigne(etat.lignes[i])) + " h";
+    if(noteEl) noteEl.textContent = nb(heuresTotalesLigne(l)) + " h";
   }
   enregistrer();
 });
@@ -1093,6 +1102,25 @@ $("#btn-ajouter").addEventListener("click", () => {
     else etat[id] = e.target.value;
     enregistrer();
   });
+});
+$("#equipe").addEventListener("change", (e) => {
+  const nom = e.target.value.trim();
+  if(!nom) return;
+  const cle = nom.toLowerCase();
+  let ajoute = 0;
+  etat.lignes.forEach(l => {
+    if(!l.collegues) l.collegues = [];
+    const dejaPresent = l.collegues.some(p => (p.nom || "").trim().toLowerCase() === cle);
+    if(!dejaPresent){
+      l.collegues.push({ nom: nom, heures: l.heures || "" });
+      ajoute++;
+    }
+  });
+  if(ajoute){
+    rendre();
+    enregistrer();
+    toast(`« ${nom} » ajouté comme renfort sur ${ajoute} intervention(s).`);
+  }
 });
 ["semaine", "annee"].forEach(id => {
   $("#" + id).addEventListener("change", (e) => {
