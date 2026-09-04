@@ -420,7 +420,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
         <input id="technicien" type="text" placeholder="Nom et prénom" autocomplete="name">
       </div>
     </div>
-    <button class="plus" id="btn-plus-identite" type="button" style="margin-top:8px">+ Équipe, semaine <span id="apercu-semaine"></span></button>
+    <button class="plus" id="btn-plus-identite" type="button" style="margin-top:8px"><span id="label-plus-identite">+ Équipe, semaine</span> <span id="apercu-semaine"></span></button>
     <div class="identite cache" id="identite-sup" style="margin-top:10px">
       <div class="champ">
         <label for="equipe">Équipe / binôme</label>
@@ -508,7 +508,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
     </div>
   </details>
 
-  <p class="pied" id="pied-version">Fiche interne — version 33 du 14/08/2026. Fonctionne hors connexion.</p>
+  <p class="pied" id="pied-version">Fiche interne — version 34 du 14/08/2026. Fonctionne hors connexion.</p>
 </main>
 
 <div class="barre">
@@ -1140,8 +1140,10 @@ function majDatesSemaine(){
   const lundi = lundiDe(etat.semaine, etat.annee);
   const vendredi = new Date(lundi); vendredi.setUTCDate(vendredi.getUTCDate() + 4);
   const texte = `Semaine ${etat.semaine} : du ${formateJourCourt(lundi)} au ${formateJourCourt(vendredi)}`;
-  $("#dates-semaine").textContent = texte;
-  $("#apercu-semaine").textContent = `(${formateJourCourt(lundi)} → ${formateJourCourt(vendredi)})`;
+  const elDates = $("#dates-semaine");
+  const elApercu = $("#apercu-semaine");
+  if(elDates) elDates.textContent = texte;
+  if(elApercu) elApercu.textContent = `(${formateJourCourt(lundi)} → ${formateJourCourt(vendredi)})`;
 }
 $("#date-repere").addEventListener("change", (e) => {
   if(!e.target.value) return;
@@ -1562,13 +1564,13 @@ function remplirEnTete(){
   majDatesSemaine();
   if(etat.equipe && etat.equipe.trim()){
     $("#identite-sup").classList.remove("cache");
-    $("#btn-plus-identite").textContent = "− Équipe, semaine, année";
+    $("#label-plus-identite").textContent = "− Équipe, semaine, année";
   }
 }
 $("#btn-plus-identite").addEventListener("click", () => {
   const zone = $("#identite-sup");
   const ouvert = zone.classList.toggle("cache") === false;
-  $("#btn-plus-identite").textContent = ouvert ? "− Équipe, semaine, année" : "+ Équipe, semaine, année";
+  $("#label-plus-identite").textContent = ouvert ? "− Équipe, semaine, année" : "+ Équipe, semaine, année";
 });
 (function init(){
   majListeClients();
