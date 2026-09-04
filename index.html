@@ -267,6 +267,30 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
 .plus:hover{background:var(--acier-200)}
 
 .jours-multi{display:flex;gap:5px;flex-wrap:wrap}
+.binome-bloc{
+  background:var(--acier-100);border:1px solid var(--acier-200);border-radius:var(--r);
+  padding:10px 12px;
+}
+.case-binome{
+  display:block;font-size:13px;font-weight:700;
+  color:var(--acier-700);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;
+}
+.ligne-personne{
+  display:flex;gap:6px;margin-top:6px;align-items:center;
+}
+.ligne-personne input[type="text"]{flex:1.4;min-height:40px}
+.ligne-personne input[type="number"]{flex:1;min-height:40px}
+.ligne-personne .suppr{flex:none;min-height:40px;min-width:40px;font-size:18px;padding:0}
+.ajouter-personne{
+  margin-top:8px;background:var(--blanc);border:1px dashed var(--acier-200);color:var(--acier-700);
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  padding:9px;min-height:38px;border-radius:var(--r);cursor:pointer;width:100%;
+}
+.ajouter-personne:hover{border-color:var(--marquage);color:var(--acier-900)}
+.note-binome{
+  font-size:12px;color:var(--acier-400);margin-top:8px;line-height:1.4;
+}
+.note-binome b{color:var(--acier-900)}
 .jour-chip{
   border:1px solid var(--acier-200);background:var(--blanc);color:var(--acier-700);
   font-family:var(--mono);font-size:11px;font-weight:700;border-radius:20px;
@@ -297,8 +321,11 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
   padding:12px;margin:4px 0 14px;
 }
 .pointage h3{
-  margin:0 0 10px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+  margin:0 0 3px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--acier-700);font-weight:700;
+}
+.sous-titre-pointage{
+  font-size:12px;color:var(--acier-400);margin:0 0 10px;line-height:1.35;
 }
 .jours{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
 @media(min-width:560px){.jours{grid-template-columns:repeat(6,1fr)}}
@@ -331,6 +358,32 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
 .ecart-moins{color:var(--orange);font-weight:700}
 .ecart-plus{color:var(--vert);font-weight:700}
 .ecart-ok{color:var(--vert);font-weight:700}
+
+.recap-personnes{
+  margin-top:12px;padding-top:10px;border-top:1px solid var(--acier-100);
+}
+.recap-personnes h4{
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--acier-400);margin-bottom:7px;font-weight:700;
+}
+.ligne-recap-p{
+  display:flex;justify-content:space-between;align-items:baseline;
+  font-size:13px;padding:4px 0;border-bottom:1px dotted var(--acier-100);
+}
+.ligne-recap-p:last-child{border-bottom:none}
+.ligne-recap-p .nom{color:var(--acier-700)}
+.ligne-recap-p .nom.moi{font-weight:700;color:var(--acier-900)}
+.ligne-recap-p .h{font-family:var(--mono);font-weight:700;color:var(--acier-900)}
+.etiquette-moi{
+  font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;
+  background:var(--marquage);color:var(--blanc);padding:2px 6px;border-radius:10px;margin-left:4px;
+  font-weight:700;vertical-align:middle;
+}
+.total-equipe{
+  border-top:2px solid var(--acier-900);border-bottom:none;margin-top:4px;padding-top:8px;
+}
+.total-equipe .nom{font-weight:700;color:var(--acier-900);font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.total-equipe .h{font-size:15px}
 
 .lien-guide{
   display:inline-flex;align-items:center;gap:5px;
@@ -406,8 +459,10 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
 
   <section class="pointage" id="pointage">
     <h3>Total de mes heures</h3>
+    <p class="sous-titre-pointage">Vos heures à vous, technicien — sans les renforts éventuels.</p>
     <div class="jours" id="jours"></div>
     <div class="bilan" id="bilan"></div>
+    <div id="recap-personnes"></div>
   </section>
 
   <div class="champ-l" style="margin-top:6px">
@@ -453,7 +508,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
     </div>
   </details>
 
-  <p class="pied" id="pied-version">Fiche interne — version 29 du 14/08/2026. Fonctionne hors connexion.</p>
+  <p class="pied" id="pied-version">Fiche interne — version 32 du 14/08/2026. Fonctionne hors connexion.</p>
 </main>
 
 <div class="barre">
@@ -560,6 +615,13 @@ function jourDeLigne(l){
   return (diff >= 0 && diff <= 5) ? diff : null;
 }
 
+function nb2(v){ return parseFloat(String(v).replace(",", ".")) || 0; }
+function heuresTotalesLigne(l){
+  const principal = nb2(l.heures);
+  const autres = (l.collegues || []).reduce((s, p) => s + nb2(p.heures), 0);
+  return principal + autres;
+}
+
 function detailsRemplis(l){
   return Boolean(
     (l.materiel && l.materiel.trim()) ||
@@ -628,12 +690,22 @@ function nouvelleLigne(){
   const vendredi = new Date(lundi); vendredi.setUTCDate(vendredi.getUTCDate() + 5);
   const dateAuj = new Date(auj + "T12:00:00");
   const dansSemaine = dateAuj >= lundi && dateAuj < vendredi;
-  return { id: idAlea(), date: dansSemaine ? auj : isoJour(lundi), client:"", donneurOrdre:"", type:"", numero:"", site:"", travaux:"", heures:"", statut:"Terminé", materiel:"", observations:"" };
+  return { id: idAlea(), date: dansSemaine ? auj : isoJour(lundi), client:"", donneurOrdre:"", type:"", numero:"", site:"", travaux:"", heures:"", collegues:[], statut:"Terminé", materiel:"", observations:"" };
 }
 
 let reduites = new Set();
+let detailsOuverts = new Set();
+
+function trierLignes(){
+  etat.lignes.sort((a, b) => {
+    const da = a.date || "9999-99-99";
+    const db = b.date || "9999-99-99";
+    return da.localeCompare(db);
+  });
+}
 
 function rendre(){
+  trierLignes();
   const liste = $("#liste");
   liste.innerHTML = "";
 
@@ -708,6 +780,17 @@ function rendre(){
           <label for="h${i}">Heures passées</label>
           <input id="h${i}" type="number" step="0.5" min="0" inputmode="decimal" placeholder="7,5" data-champ="heures" data-i="${i}" value="${esc(l.heures)}">
         </div>
+        <div class="champ-l binome-bloc">
+          <label class="case-binome" style="margin-bottom:${(l.collegues || []).length ? "8px" : "0"}">👥 Autres personnes sur ce chantier</label>
+          ${(l.collegues || []).map((p, pi) => `
+          <div class="ligne-personne" data-personne="${i}-${pi}">
+            <input type="text" placeholder="Nom" data-champ-personne="nom" data-i="${i}" data-p="${pi}" value="${esc(p.nom)}">
+            <input type="number" step="0.5" min="0" inputmode="decimal" placeholder="7,5" data-champ-personne="heures" data-i="${i}" data-p="${pi}" value="${esc(p.heures)}">
+            <button type="button" class="mini suppr" data-suppr-personne="${i}" data-p="${pi}" title="Retirer">×</button>
+          </div>`).join("")}
+          <button type="button" class="ajouter-personne" data-ajout-personne="${i}">+ Ajouter une personne</button>
+          ${(l.collegues || []).length ? `<p class="note-binome">Ajustez les heures si quelqu'un est arrivé en retard, parti plus tôt, ou absent une partie du chantier. Total compté pour cette intervention : <b>${nb(heuresTotalesLigne(l))} h</b></p>` : ""}
+        </div>
         <div class="champ-l">
           <label>Même chantier, d'autres jours ?</label>
           <div class="jours-multi">
@@ -721,8 +804,8 @@ function rendre(){
             }).join("") : ""}
           </div>
         </div>
-        <button class="plus" type="button" data-plus="${i}">${detailsRemplis(l) ? "− Masquer les détails" : "+ Ajouter un détail (facultatif)"}</button>
-        <div class="sous-grille g2 detail-sup${detailsRemplis(l) ? "" : " cache"}" data-detail="${i}">
+        <button class="plus" type="button" data-plus="${i}">${(detailsOuverts.has(l.id) || detailsRemplis(l)) ? "− Masquer les détails" : "+ Ajouter un détail (facultatif)"}</button>
+        <div class="sous-grille g2 detail-sup${(detailsOuverts.has(l.id) || detailsRemplis(l)) ? "" : " cache"}" data-detail="${i}">
           <div class="champ-l">
             <label for="d${i}">Date</label>
             <input id="d${i}" type="date" data-champ="date" data-i="${i}" value="${esc(l.date)}">
@@ -770,6 +853,35 @@ function majTotaux(){
   $("#totaux").innerHTML = `<b>${hTxt} h</b> · ${clients.size} client${clients.size > 1 ? "s" : ""}`;
   $("#compteur").textContent = etat.lignes.length + " ligne" + (etat.lignes.length > 1 ? "s" : "");
   rendrePointage(h);
+  rendreRecapPersonnes(h);
+}
+
+function rendreRecapPersonnes(mesHeures){
+  const zone = $("#recap-personnes");
+  const autres = new Map();
+  etat.lignes.forEach(l => {
+    (l.collegues || []).forEach(p => {
+      const nomBrut = (p.nom || "").trim();
+      const cle = nomBrut ? nomBrut.toLowerCase() : "— sans nom —";
+      const h = nb2(p.heures);
+      if(!h && !nomBrut) return;
+      autres.set(cle, (autres.get(cle) || { nom: nomBrut || "Sans nom", h: 0 }));
+      autres.get(cle).h += h;
+    });
+  });
+  if(autres.size === 0){ zone.innerHTML = ""; return; }
+  let html = `<div class="recap-personnes">
+    <h4>Heures par personne cette semaine</h4>
+    <p class="sous-titre-pointage" style="margin-bottom:8px">Chacun avec le total de ses propres heures, tous chantiers confondus.</p>`;
+  html += `<div class="ligne-recap-p"><span class="nom moi">${esc(etat.technicien || "Moi")} <span class="etiquette-moi">vous</span></span><span class="h">${nb(mesHeures)} h</span></div>`;
+  let totalEquipe = mesHeures;
+  Array.from(autres.values()).sort((a, b) => a.nom.localeCompare(b.nom)).forEach(p => {
+    html += `<div class="ligne-recap-p"><span class="nom">${esc(p.nom)}</span><span class="h">${nb(p.h)} h</span></div>`;
+    totalEquipe += p.h;
+  });
+  html += `<div class="ligne-recap-p total-equipe"><span class="nom">Total équipe (tout le monde)</span><span class="h">${nb(totalEquipe)} h</span></div>`;
+  html += `</div>`;
+  zone.innerHTML = html;
 }
 
 function nb(v){
@@ -820,6 +932,20 @@ function rendrePointage(total){
 /* ---------- Saisie ---------- */
 $("#liste").addEventListener("input", (e) => {
   const el = e.target;
+  const champPersonne = el.dataset.champPersonne;
+  if(champPersonne){
+    const i = parseInt(el.dataset.i, 10);
+    const p = parseInt(el.dataset.p, 10);
+    if(!etat.lignes[i].collegues) etat.lignes[i].collegues = [];
+    etat.lignes[i].collegues[p][champPersonne] = el.value;
+    if(champPersonne === "heures"){
+      majTotaux();
+      const noteEl = el.closest(".ligne").querySelector(".note-binome b");
+      if(noteEl) noteEl.textContent = nb(heuresTotalesLigne(etat.lignes[i])) + " h";
+    }
+    enregistrer();
+    return;
+  }
   const champ = el.dataset.champ;
   if(!champ) return;
   const i = parseInt(el.dataset.i, 10);
@@ -828,7 +954,11 @@ $("#liste").addEventListener("input", (e) => {
     const tete = el.closest(".ligne").querySelector(".ligne-titre");
     tete.textContent = [etat.lignes[i].client, etat.lignes[i].site].filter(Boolean).join(" — ") || "Nouvelle intervention";
   }
-  if(champ === "heures") majTotaux();
+  if(champ === "heures"){
+    majTotaux();
+    const noteEl = el.closest(".ligne").querySelector(".note-binome b");
+    if(noteEl) noteEl.textContent = nb(heuresTotalesLigne(etat.lignes[i])) + " h";
+  }
   enregistrer();
 });
 $("#liste").addEventListener("change", (e) => {
@@ -840,10 +970,32 @@ $("#liste").addEventListener("change", (e) => {
   if(champ === "statut"){
     appliquerCouleur(e.target, e.target.value);
   }
+  if(champ === "date"){
+    rendre();
+  }
   enregistrer();
 });
 $("#liste").addEventListener("click", (e) => {
   const del = e.target.dataset.del, dup = e.target.dataset.dup, plus = e.target.dataset.plus, jourchip = e.target.dataset.jourchip;
+  const ajoutPersonne = e.target.dataset.ajoutPersonne;
+  const supprPersonne = e.target.dataset.supprPersonne;
+  if(ajoutPersonne !== undefined){
+    const i = parseInt(ajoutPersonne, 10);
+    const l = etat.lignes[i];
+    if(!l.collegues) l.collegues = [];
+    l.collegues.push({ nom:"", heures: l.heures || "" });
+    rendre();
+    enregistrer();
+    return;
+  }
+  if(supprPersonne !== undefined){
+    const i = parseInt(supprPersonne, 10);
+    const p = parseInt(e.target.dataset.p, 10);
+    etat.lignes[i].collegues.splice(p, 1);
+    rendre();
+    enregistrer();
+    return;
+  }
   const reduire = e.target.closest("[data-reduire]") ? e.target.closest("[data-reduire]").dataset.reduire : undefined;
   if(reduire !== undefined){
     const i = parseInt(reduire, 10);
@@ -876,9 +1028,13 @@ $("#liste").addEventListener("click", (e) => {
     return;
   }
   if(plus !== undefined){
+    const i = parseInt(plus, 10);
+    const l = etat.lignes[i];
+    if(!l.id) l.id = idAlea();
     const zone = e.target.closest(".ligne").querySelector(".detail-sup");
     const ouvert = zone.classList.toggle("cache") === false;
-    e.target.textContent = ouvert ? "− Masquer matériel et observations" : "+ Matériel, observations";
+    if(ouvert) detailsOuverts.add(l.id); else detailsOuverts.delete(l.id);
+    e.target.textContent = ouvert ? "− Masquer les détails" : "+ Ajouter un détail (facultatif)";
     return;
   }
   if(del !== undefined){
@@ -1001,6 +1157,12 @@ function texteRecap(){
     if((l.type || "").trim()) t += `    ${l.type}${(l.numero || "").trim() ? " n° " + l.numero : ""}\n`;
     if(l.travaux.trim()) t += `    Travaux : ${l.travaux.replace(/\n/g, " ")}\n`;
     t += `    Heures : ${l.heures || "0"} h — ${l.statut}\n`;
+    if((l.collegues || []).length){
+      l.collegues.forEach(p => {
+        t += `    + ${(p.nom || "").trim() || "personne"} : ${p.heures || "0"} h\n`;
+      });
+      t += `    Total intervention : ${nb(heuresTotalesLigne(l))} h\n`;
+    }
     if(l.materiel.trim()) t += `    Matériel : ${l.materiel.replace(/\n/g, " ")}\n`;
     if(l.observations.trim()) t += `    Observations : ${l.observations.replace(/\n/g, " ")}\n`;
     t += `\n`;
@@ -1012,12 +1174,13 @@ function texteRecap(){
 }
 
 function lignesCSV(rapports){
-  const entetes = ["Semaine","Annee","Technicien","Equipe","Date","Client","Donneur d'ordre","Type","Numero","Site","Travaux","Heures","Avancement","Materiel","Observations","Remarques semaine"];
+  const entetes = ["Semaine","Annee","Technicien","Equipe","Date","Client","Donneur d'ordre","Type","Numero","Site","Travaux","Heures","Autres personnes","Total heures","Avancement","Materiel","Observations","Remarques semaine"];
   const cell = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""').replace(/\r?\n/g, " ") + '"';
   const out = [entetes.map(cell).join(";")];
   rapports.forEach(r => {
     (r.lignes || []).forEach(l => {
-      out.push([r.semaine, r.annee, r.technicien, r.equipe, l.date, l.client, l.donneurOrdre, l.type, l.numero, l.site, l.travaux, l.heures, l.statut, l.materiel, l.observations, r.remarques].map(cell).join(";"));
+      const autres = (l.collegues || []).map(p => (p.nom || "Sans nom") + " : " + (p.heures || "0") + " h").join(" / ");
+      out.push([r.semaine, r.annee, r.technicien, r.equipe, l.date, l.client, l.donneurOrdre, l.type, l.numero, l.site, l.travaux, l.heures, autres, nb(heuresTotalesLigne(l)), l.statut, l.materiel, l.observations, r.remarques].map(cell).join(";"));
     });
   });
   return "\uFEFF" + out.join("\r\n");
@@ -1224,7 +1387,7 @@ function regrouperParClient(rapports){
       g.lignes.push({ l:l, r:r });
       if(l.site && l.site.trim()) g.sites.add(l.site.trim());
       g.semaines.add(r.semaine);
-      const h = parseFloat(String(l.heures).replace(",", ".")) || 0;
+      const h = heuresTotalesLigne(l);
       if(estSamedi(l.date)) g.samedi += h; else g.heures += h;
     });
   });
@@ -1241,6 +1404,7 @@ function devisDepuis(g){
     const lieu = l.site && l.site.trim() ? " — " + l.site.trim() : "";
     texte += "• " + jour + lieu + " : " + (l.travaux || "").replace(/\s+/g, " ").trim();
     if(l.statut && l.statut !== "Terminé") texte += " (" + l.statut.toLowerCase() + ")";
+    if((l.collegues || []).length) texte += " [+ " + l.collegues.length + " pers. : " + nb(heuresTotalesLigne(l) - nb2(l.heures)) + " h]";
     texte += "\n";
   });
   const restes = g.lignes.map(x => (x.l.observations || "").trim()).filter(Boolean);
