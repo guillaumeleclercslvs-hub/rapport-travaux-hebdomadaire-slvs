@@ -146,9 +146,13 @@ input:focus,select:focus,textarea:focus{outline:3px solid var(--marquage);outlin
 }
 .ligne.reduite{margin-bottom:8px}
 .ligne.reduite .ligne-tete{cursor:pointer;background:var(--blanc);border-bottom:none}
-.ligne.reduite .ligne-titre{flex:none;max-width:38%}
+.ligne.reduite .ligne-titre{flex:none;max-width:100%;display:block}
+.reduite-corps{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.reduite-extrait{
+  font-size:11px;color:var(--acier-400);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
 .resume-reduit{
-  flex:1;min-width:0;font-family:var(--mono);font-size:12px;color:var(--acier-400);
+  flex:none;max-width:34%;font-family:var(--mono);font-size:12px;color:var(--acier-400);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;margin-right:4px;
 }
 .ligne.surlignee{animation:flash-surbrillance 1.4s ease-out 1}
@@ -349,6 +353,28 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
 }
 .jour.plein{background:var(--blanc);border-left:3px solid var(--marquage)}
 .jour.zero .v{color:var(--acier-200)}
+.jour{position:relative}
+.jour-statut-btn{
+  position:absolute;top:2px;right:2px;width:16px;height:16px;line-height:16px;
+  border:none;background:transparent;color:var(--acier-200);font-size:10px;
+  padding:0;cursor:pointer;border-radius:3px;
+}
+.jour-statut-btn:hover{background:rgba(0,0,0,.08);color:var(--acier-700)}
+.jour.type-rtt,.jour.type-conge,.jour.type-maladie,.jour.type-absence{border-left:3px solid transparent}
+.jour.type-rtt{background:var(--acier-200)}
+.jour.type-rtt .v{color:var(--acier-900);font-size:11px}
+.jour.type-conge{background:var(--acier-700)}
+.jour.type-conge .v{color:var(--blanc);font-size:11px}
+.jour.type-conge .j{color:var(--acier-200)}
+.jour.type-maladie{background:var(--orange)}
+.jour.type-maladie .v{color:var(--blanc);font-size:11px}
+.jour.type-maladie .j{color:rgba(255,255,255,.8)}
+.jour.type-accident{background:var(--marquage)}
+.jour.type-accident .v{color:var(--blanc);font-size:10px}
+.jour.type-accident .j{color:rgba(255,255,255,.85)}
+.jour.type-absence{background:var(--acier-900)}
+.jour.type-absence .v{color:var(--blanc);font-size:11px}
+.jour.type-absence .j{color:var(--acier-400)}
 .bilan{
   margin-top:10px;padding-top:9px;border-top:1px solid var(--acier-100);
   display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;
@@ -480,7 +506,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
         <button class="btn-outil" id="btn-nouvelle" type="button">Commencer une nouvelle semaine</button>
         <button class="btn-outil" id="btn-sauver" type="button">Copie de secours (.json)</button>
         <button class="btn-outil" id="btn-charger" type="button">Recharger une copie</button>
-        <button class="btn-outil" id="btn-imprimer" type="button">Imprimer / PDF</button>
+        <button class="btn-outil" id="btn-imprimer" type="button" title="Ouvre l'impression : choisissez « Enregistrer en PDF » comme imprimante">📄 Enregistrer en PDF</button>
         <a class="btn-outil" href="guide.pdf" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center">Guide d'utilisation (PDF)</a>
       </div>
       <input type="file" id="fichier-charger" accept=".json" hidden>
@@ -508,7 +534,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
     </div>
   </details>
 
-  <p class="pied" id="pied-version">Fiche interne — version 35 du 14/08/2026. Fonctionne hors connexion.</p>
+  <p class="pied" id="pied-version">Fiche interne — version 37 du 14/08/2026. Fonctionne hors connexion.</p>
 </main>
 
 <div class="barre">
@@ -560,7 +586,7 @@ const CLIENTS = [
 /* ---------- État ---------- */
 const CLE_BROUILLON = "rapport-hebdo-slvs";
 const STATUTS = ["Terminé", "En cours", "À reprogrammer"];
-let etat = { technicien:"", equipe:"", semaine:null, annee:null, remarques:"", lignes:[] };
+let etat = { technicien:"", equipe:"", semaine:null, annee:null, remarques:"", lignes:[], absences:{} };
 let consolide = [];
 
 /* ---------- Utilitaires ---------- */
@@ -730,11 +756,15 @@ function rendre(){
 
     if(estReduite){
       const h = l.heures ? nb(parseFloat(String(l.heures).replace(",", "."))) + " h" : "";
+      const extrait = (l.travaux || "").trim().slice(0, 60) + ((l.travaux || "").trim().length > 60 ? "…" : "");
       bloc.classList.add("reduite");
       bloc.innerHTML = `
         <div class="ligne-tete" data-reduire="${i}" role="button">
           <span class="num">${String(i + 1).padStart(2, "0")}</span>
-          <span class="ligne-titre">${esc(titre)}</span>
+          <div class="reduite-corps">
+            <span class="ligne-titre">${esc(titre)}</span>
+            ${extrait ? `<span class="reduite-extrait">${esc(extrait)}</span>` : ""}
+          </div>
           <span class="resume-reduit">${h}${l.date ? " · " + esc(jourFr(l.date)) : ""}</span>
           <button class="mini" type="button" data-reduire="${i}" title="Développer">▾</button>
         </div>`;
@@ -891,6 +921,9 @@ function nb(v){
   return (Math.round(v * 100) / 100).toString().replace(".", ",");
 }
 
+const TYPES_JOUR = ["", "RTT", "Congé", "Maladie", "Accident travail", "Absence"];
+const CLASSE_TYPE_JOUR = { "RTT": "type-rtt", "Congé": "type-conge", "Maladie": "type-maladie", "Accident travail": "type-accident", "Absence": "type-absence" };
+
 function rendrePointage(total){
   const noms = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
   const lundi = lundiDe(etat.semaine, etat.annee);
@@ -914,13 +947,23 @@ function rendrePointage(total){
   $("#jours").innerHTML = noms.map((n, i) => {
     const d = new Date(lundi);
     d.setUTCDate(d.getUTCDate() + i);
+    const iso = isoJour(d);
     const jour = String(d.getUTCDate()).padStart(2, "0") + "/" + String(d.getUTCMonth() + 1).padStart(2, "0");
     const v = parJour[i];
     const lieux = lieuxJour[i];
-    return `<div class="jour ${v || lieux.length ? "plein" : "zero"}" data-jourclic="${isoJour(d)}" role="button">
+    const typeJour = (etat.absences || {})[iso] || "";
+    if(typeJour){
+      return `<div class="jour ${CLASSE_TYPE_JOUR[typeJour]}" data-jourclic="${iso}" role="button">
+        <span class="j">${n} ${jour}</span>
+        <span class="v">${esc(typeJour)}</span>
+        <button class="jour-statut-btn" type="button" data-cyclejour="${iso}" title="Changer le statut du jour">✎</button>
+      </div>`;
+    }
+    return `<div class="jour ${v || lieux.length ? "plein" : "zero"}" data-jourclic="${iso}" role="button">
       <span class="j">${n} ${jour}</span>
       <span class="v">${v ? nb(v) : "—"}</span>
       ${lieux.length ? `<span class="lieu">${esc(lieux.join(" · "))}</span>` : ""}
+      <button class="jour-statut-btn" type="button" data-cyclejour="${iso}" title="Marquer RTT / congé...">✎</button>
     </div>`;
   }).join("");
 
@@ -933,6 +976,22 @@ function rendrePointage(total){
 }
 
 /* ---------- Saisie ---------- */
+$("#liste").addEventListener("focusout", (e) => {
+  const ligneEl = e.target.closest(".ligne");
+  if(!ligneEl || ligneEl.classList.contains("reduite")) return;
+  const id = ligneEl.dataset.id;
+  setTimeout(() => {
+    const actif = document.activeElement;
+    if(actif && ligneEl.contains(actif)) return;
+    const l = etat.lignes.find(l => l.id === id);
+    if(!l) return;
+    const complete = (l.client || "").trim() && (l.travaux || "").trim() && String(l.heures || "").trim();
+    if(complete){
+      reduites.add(l.id);
+      rendre();
+    }
+  }, 150);
+});
 $("#liste").addEventListener("input", (e) => {
   const el = e.target;
   const champPersonne = el.dataset.champPersonne;
@@ -1066,12 +1125,42 @@ $("#liste").addEventListener("click", (e) => {
 });
 
 $("#jours").addEventListener("click", (e) => {
+  const cycleEl = e.target.closest("[data-cyclejour]");
+  if(cycleEl){
+    const iso = cycleEl.dataset.cyclejour;
+    if(!etat.absences) etat.absences = {};
+    const actuel = etat.absences[iso] || "";
+    const idx = TYPES_JOUR.indexOf(actuel);
+    const suivant = TYPES_JOUR[(idx + 1) % TYPES_JOUR.length];
+    if(suivant) etat.absences[iso] = suivant; else delete etat.absences[iso];
+    rendre();
+    enregistrer();
+    toast(suivant ? `${jourFr(iso)} marqué « ${suivant} ».` : `Statut retiré pour ${jourFr(iso)}.`);
+    return;
+  }
   const jourEl = e.target.closest("[data-jourclic]");
   if(!jourEl) return;
   const iso = jourEl.dataset.jourclic;
+  if((etat.absences || {})[iso]){
+    toast(`Jour marqué « ${etat.absences[iso]} ». Retirez ce statut (✎) pour ajouter une intervention.`);
+    return;
+  }
   const index = etat.lignes.findIndex(l => l.date === iso);
   if(index === -1){
-    toast("Aucune intervention à cette date.");
+    const ligne = nouvelleLigne();
+    ligne.date = iso;
+    etat.lignes.push(ligne);
+    rendre();
+    enregistrer();
+    requestAnimationFrame(() => {
+      const cible = document.querySelector(`.ligne[data-date="${iso}"]`);
+      if(cible){
+        cible.scrollIntoView({ behavior:"smooth", block:"center" });
+        const champClient = cible.querySelector('input[data-champ="client"]');
+        if(champClient) champClient.focus({ preventScroll:true });
+      }
+    });
+    toast(`Nouvelle intervention créée pour le ${jourFr(iso)}.`);
     return;
   }
   if(reduites.size){
@@ -1182,6 +1271,10 @@ function texteRecap(){
   let t = `RAPPORT HEBDOMADAIRE — Semaine ${etat.semaine} / ${etat.annee} (${periode})\n`;
   t += `Technicien : ${etat.technicien}\n`;
   if(etat.equipe.trim()) t += `Équipe : ${etat.equipe}\n`;
+  const absencesListe = Object.entries(etat.absences || {});
+  if(absencesListe.length){
+    t += `Jours non travaillés : ` + absencesListe.map(([iso, type]) => jourFr(iso) + " (" + type + ")").join(", ") + `\n`;
+  }
   t += `\n`;
   etat.lignes.forEach((l, i) => {
     t += `${String(i + 1).padStart(2, "0")}. ${jourFr(l.date)} — ${l.client || "client non précisé"}${l.site ? " / " + l.site : ""}\n`;
@@ -1270,7 +1363,8 @@ $("#btn-envoyer").addEventListener("click", async () => {
         semaine: etat.semaine,
         annee: etat.annee,
         remarques: etat.remarques,
-        lignes: etat.lignes
+        lignes: etat.lignes,
+        absences: etat.absences || {}
       })
     });
     if(!rep.ok) throw new Error("refus du serveur");
@@ -1289,7 +1383,7 @@ $("#btn-envoyer").addEventListener("click", async () => {
 $("#btn-nouvelle").addEventListener("click", () => {
   if(!confirm("Commencer une nouvelle fiche ? Les interventions saisies seront effacées de cet appareil.")) return;
   const s = semaineISO(new Date());
-  etat = { technicien: etat.technicien, equipe: etat.equipe, semaine: s.semaine, annee: s.annee, remarques: "", lignes: [] };
+  etat = { technicien: etat.technicien, equipe: etat.equipe, semaine: s.semaine, annee: s.annee, remarques: "", lignes: [], absences: {} };
   etat.lignes.push(nouvelleLigne());
   remplirEnTete();
   rendre();
@@ -1309,7 +1403,7 @@ $("#fichier-charger").addEventListener("change", (e) => {
   lecteur.onload = () => {
     try{
       const d = JSON.parse(lecteur.result);
-      etat = Object.assign({ technicien:"", equipe:"", semaine:1, annee:2026, remarques:"", lignes:[] }, d);
+      etat = Object.assign({ technicien:"", equipe:"", semaine:1, annee:2026, remarques:"", lignes:[], absences:{} }, d);
       remplirEnTete();
       rendre();
       enregistrer();
@@ -1584,7 +1678,7 @@ $("#btn-plus-identite").addEventListener("click", () => {
   const brouillon = lireBrouillon();
 
   if(brouillon && Array.isArray(brouillon.lignes) && brouillon.lignes.length){
-    etat = Object.assign({ technicien:"", equipe:"", semaine:s.semaine, annee:s.annee, remarques:"", lignes:[] }, brouillon);
+    etat = Object.assign({ technicien:"", equipe:"", semaine:s.semaine, annee:s.annee, remarques:"", lignes:[], absences:{} }, brouillon);
     remplirEnTete();
     rendre();
     const h = etat.lignes.reduce((t, l) => t + (parseFloat(String(l.heures).replace(",", ".")) || 0), 0);
