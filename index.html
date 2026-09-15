@@ -291,6 +291,23 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
   padding:9px;min-height:38px;border-radius:var(--r);cursor:pointer;width:100%;
 }
 .ajouter-personne:hover{border-color:var(--marquage);color:var(--acier-900)}
+
+.section-absences{
+  background:var(--blanc);border:1px solid var(--acier-200);border-radius:var(--r);
+  padding:14px;margin:12px 0;
+}
+.section-absences h3{
+  margin:0 0 3px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--acier-700);font-weight:700;
+}
+.ligne-absence{
+  display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-top:8px;
+  padding-bottom:10px;border-bottom:1px dotted var(--acier-200);
+}
+.ligne-absence:last-child{border-bottom:none;padding-bottom:0}
+.ligne-absence input[type="text"]{grid-column:1 / -1;min-height:40px}
+.ligne-absence select{min-height:40px;font-size:13px;min-width:0}
+.ligne-absence .suppr{min-height:40px;min-width:40px;font-size:18px;padding:0}
 .note-binome{
   font-size:12px;color:var(--acier-400);margin-top:8px;line-height:1.4;
 }
@@ -351,16 +368,11 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
   margin-top:4px;padding-top:4px;border-top:1px dotted var(--acier-200);
   overflow-wrap:anywhere;
 }
+.jour .lieu.abs-autre{color:var(--marquage);font-weight:700}
 .jour.plein{background:var(--blanc);border-left:3px solid var(--marquage)}
 .jour.zero .v{color:var(--acier-200)}
 .jour{position:relative}
-.jour-statut-btn{
-  position:absolute;top:2px;right:2px;width:16px;height:16px;line-height:16px;
-  border:none;background:transparent;color:var(--acier-200);font-size:10px;
-  padding:0;cursor:pointer;border-radius:3px;
-}
-.jour-statut-btn:hover{background:rgba(0,0,0,.08);color:var(--acier-700)}
-.jour.type-rtt,.jour.type-conge,.jour.type-maladie,.jour.type-absence{border-left:3px solid transparent}
+.jour.type-rtt,.jour.type-conge,.jour.type-maladie,.jour.type-absence,.jour.type-accident{border-left:3px solid transparent}
 .jour.type-rtt{background:var(--acier-200)}
 .jour.type-rtt .v{color:var(--acier-900);font-size:11px}
 .jour.type-conge{background:var(--acier-700)}
@@ -491,6 +503,13 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
     <div id="recap-personnes"></div>
   </section>
 
+  <section class="section-absences">
+    <h3>🗓️ Jours non travaillés</h3>
+    <p class="sous-titre-pointage">RTT, congé, maladie, accident du travail… Pour vous ou pour un collègue de l'équipe.</p>
+    <div id="liste-absences"></div>
+    <button type="button" class="ajouter-personne" id="btn-ajout-absence">+ Ajouter un jour non travaillé</button>
+  </section>
+
   <div class="champ-l" style="margin-top:6px">
     <label for="remarques-semaine">Remarques générales de la semaine</label>
     <textarea id="remarques-semaine" placeholder="Matériel à commander, sécurité, retards, informations pour le bureau…"></textarea>
@@ -514,6 +533,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
   </details>
 
   <datalist id="liste-clients"></datalist>
+  <datalist id="liste-personnes"></datalist>
 
   <details id="espace-bureau" class="cache">
     <summary>Espace bureau — regrouper les rapports reçus</summary>
@@ -534,7 +554,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
     </div>
   </details>
 
-  <p class="pied" id="pied-version">Fiche interne — version 37 du 14/08/2026. Fonctionne hors connexion.</p>
+  <p class="pied" id="pied-version">Fiche interne — version 41 du 14/08/2026. Fonctionne hors connexion.</p>
 </main>
 
 <div class="barre">
@@ -586,7 +606,7 @@ const CLIENTS = [
 /* ---------- État ---------- */
 const CLE_BROUILLON = "rapport-hebdo-slvs";
 const STATUTS = ["Terminé", "En cours", "À reprogrammer"];
-let etat = { technicien:"", equipe:"", semaine:null, annee:null, remarques:"", lignes:[], absences:{} };
+let etat = { technicien:"", equipe:"", semaine:null, annee:null, remarques:"", lignes:[], absences:[] };
 let consolide = [];
 
 /* ---------- Utilitaires ---------- */
@@ -735,6 +755,7 @@ function trierLignes(){
 
 function rendre(){
   trierLignes();
+  rendreAbsences();
   const liste = $("#liste");
   liste.innerHTML = "";
 
@@ -921,8 +942,9 @@ function nb(v){
   return (Math.round(v * 100) / 100).toString().replace(".", ",");
 }
 
-const TYPES_JOUR = ["", "RTT", "Congé", "Maladie", "Accident travail", "Absence"];
 const CLASSE_TYPE_JOUR = { "RTT": "type-rtt", "Congé": "type-conge", "Maladie": "type-maladie", "Accident travail": "type-accident", "Absence": "type-absence" };
+
+const TYPES_ABSENCE = ["RTT", "Congé", "Maladie", "Accident travail", "Absence"];
 
 function rendrePointage(total){
   const noms = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
@@ -944,6 +966,8 @@ function rendrePointage(total){
     }
   });
 
+  const nomTech = (etat.technicien || "").trim().toLowerCase();
+
   $("#jours").innerHTML = noms.map((n, i) => {
     const d = new Date(lundi);
     d.setUTCDate(d.getUTCDate() + i);
@@ -951,19 +975,22 @@ function rendrePointage(total){
     const jour = String(d.getUTCDate()).padStart(2, "0") + "/" + String(d.getUTCMonth() + 1).padStart(2, "0");
     const v = parJour[i];
     const lieux = lieuxJour[i];
-    const typeJour = (etat.absences || {})[iso] || "";
-    if(typeJour){
-      return `<div class="jour ${CLASSE_TYPE_JOUR[typeJour]}" data-jourclic="${iso}" role="button">
+    const absencesJour = (etat.absences || []).filter(a => a.date === iso);
+    const absenceMoi = nomTech ? absencesJour.find(a => (a.personne || "").trim().toLowerCase() === nomTech) : undefined;
+    const absencesAutres = absencesJour.filter(a => a !== absenceMoi && (a.personne || "").trim());
+
+    if(absenceMoi){
+      return `<div class="jour ${CLASSE_TYPE_JOUR[absenceMoi.type] || ""}" data-jourclic="${iso}" role="button">
         <span class="j">${n} ${jour}</span>
-        <span class="v">${esc(typeJour)}</span>
-        <button class="jour-statut-btn" type="button" data-cyclejour="${iso}" title="Changer le statut du jour">✎</button>
+        <span class="v">${esc(absenceMoi.type)}</span>
+        ${absencesAutres.length ? `<span class="lieu">${esc(absencesAutres.map(a => (a.personne || "?") + " : " + a.type).join(" · "))}</span>` : ""}
       </div>`;
     }
     return `<div class="jour ${v || lieux.length ? "plein" : "zero"}" data-jourclic="${iso}" role="button">
       <span class="j">${n} ${jour}</span>
       <span class="v">${v ? nb(v) : "—"}</span>
       ${lieux.length ? `<span class="lieu">${esc(lieux.join(" · "))}</span>` : ""}
-      <button class="jour-statut-btn" type="button" data-cyclejour="${iso}" title="Marquer RTT / congé...">✎</button>
+      ${absencesAutres.length ? `<span class="lieu abs-autre">${esc(absencesAutres.map(a => (a.personne || "?") + " : " + a.type).join(" · "))}</span>` : ""}
     </div>`;
   }).join("");
 
@@ -974,6 +1001,80 @@ function rendrePointage(total){
     `<span>${etat.lignes.length} intervention(s)${samedi ? " · dont " + nb(samedi) + " h le samedi" : ""}</span>` +
     (horsSemaine ? `<span style="width:100%;color:var(--orange)">${nb(horsSemaine)} h sur une date hors de la semaine ${etat.semaine} : vérifiez les dates.</span>` : "");
 }
+
+/* ---------- Jours non travaillés (RTT, congé, maladie...) ---------- */
+function optionsJoursSemaine(selection){
+  const lundi = lundiDe(etat.semaine, etat.annee);
+  const noms = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+  let html = "";
+  for(let i = 0; i < 6; i++){
+    const d = new Date(lundi); d.setUTCDate(d.getUTCDate() + i);
+    const iso = isoJour(d);
+    const label = noms[i] + " " + String(d.getUTCDate()).padStart(2, "0") + "/" + String(d.getUTCMonth() + 1).padStart(2, "0");
+    html += `<option value="${iso}"${iso === selection ? " selected" : ""}>${label}</option>`;
+  }
+  return html;
+}
+function optionsTypesAbsence(selection){
+  return TYPES_ABSENCE.map(t => `<option value="${t}"${t === selection ? " selected" : ""}>${t}</option>`).join("");
+}
+function majListePersonnes(){
+  const noms = new Set();
+  if((etat.technicien || "").trim()) noms.add(etat.technicien.trim());
+  etat.lignes.forEach(l => (l.collegues || []).forEach(p => { if((p.nom || "").trim()) noms.add(p.nom.trim()); }));
+  $("#liste-personnes").innerHTML = Array.from(noms).map(n => `<option value="${esc(n)}"></option>`).join("");
+}
+function rendreAbsences(){
+  if(!Array.isArray(etat.absences)) etat.absences = [];
+  majListePersonnes();
+  const zone = $("#liste-absences");
+  if(!etat.absences) etat.absences = [];
+  if(etat.absences.length === 0){
+    zone.innerHTML = `<p class="sous-titre-pointage" style="margin:2px 0 0">Aucun jour non travaillé déclaré cette semaine.</p>`;
+    return;
+  }
+  zone.innerHTML = etat.absences.map(a => `
+    <div class="ligne-absence" data-absid="${a.id}">
+      <input type="text" list="liste-personnes" placeholder="Vous ou un collègue" data-abschamp="personne" data-absid="${a.id}" value="${esc(a.personne)}">
+      <select data-abschamp="date" data-absid="${a.id}">${optionsJoursSemaine(a.date)}</select>
+      <select data-abschamp="type" data-absid="${a.id}">${optionsTypesAbsence(a.type)}</select>
+      <button type="button" class="mini suppr" data-absdel="${a.id}" title="Retirer">×</button>
+    </div>`).join("");
+}
+$("#btn-ajout-absence").addEventListener("click", () => {
+  if(!etat.absences) etat.absences = [];
+  const lundi = lundiDe(etat.semaine, etat.annee);
+  etat.absences.push({ id: idAlea(), personne: etat.technicien || "", date: isoJour(lundi), type: "RTT" });
+  rendreAbsences();
+  majTotaux();
+  enregistrer();
+});
+$("#liste-absences").addEventListener("input", (e) => {
+  const champ = e.target.dataset.abschamp;
+  if(!champ) return;
+  const a = etat.absences.find(x => x.id === e.target.dataset.absid);
+  if(!a) return;
+  a[champ] = e.target.value;
+  if(champ === "personne"){ majTotaux(); }
+  enregistrer();
+});
+$("#liste-absences").addEventListener("change", (e) => {
+  const champ = e.target.dataset.abschamp;
+  if(!champ) return;
+  const a = etat.absences.find(x => x.id === e.target.dataset.absid);
+  if(!a) return;
+  a[champ] = e.target.value;
+  majTotaux();
+  enregistrer();
+});
+$("#liste-absences").addEventListener("click", (e) => {
+  const id = e.target.dataset.absdel;
+  if(!id) return;
+  etat.absences = etat.absences.filter(a => a.id !== id);
+  rendreAbsences();
+  majTotaux();
+  enregistrer();
+});
 
 /* ---------- Saisie ---------- */
 $("#liste").addEventListener("focusout", (e) => {
@@ -1125,24 +1226,13 @@ $("#liste").addEventListener("click", (e) => {
 });
 
 $("#jours").addEventListener("click", (e) => {
-  const cycleEl = e.target.closest("[data-cyclejour]");
-  if(cycleEl){
-    const iso = cycleEl.dataset.cyclejour;
-    if(!etat.absences) etat.absences = {};
-    const actuel = etat.absences[iso] || "";
-    const idx = TYPES_JOUR.indexOf(actuel);
-    const suivant = TYPES_JOUR[(idx + 1) % TYPES_JOUR.length];
-    if(suivant) etat.absences[iso] = suivant; else delete etat.absences[iso];
-    rendre();
-    enregistrer();
-    toast(suivant ? `${jourFr(iso)} marqué « ${suivant} ».` : `Statut retiré pour ${jourFr(iso)}.`);
-    return;
-  }
   const jourEl = e.target.closest("[data-jourclic]");
   if(!jourEl) return;
   const iso = jourEl.dataset.jourclic;
-  if((etat.absences || {})[iso]){
-    toast(`Jour marqué « ${etat.absences[iso]} ». Retirez ce statut (✎) pour ajouter une intervention.`);
+  const nomTech = (etat.technicien || "").trim().toLowerCase();
+  const absenceMoi = (etat.absences || []).find(a => a.date === iso && (a.personne || "").trim().toLowerCase() === nomTech);
+  if(absenceMoi){
+    toast(`Jour marqué « ${absenceMoi.type} ». Retirez-le dans « Jours non travaillés » pour ajouter une intervention.`);
     return;
   }
   const index = etat.lignes.findIndex(l => l.date === iso);
@@ -1271,9 +1361,9 @@ function texteRecap(){
   let t = `RAPPORT HEBDOMADAIRE — Semaine ${etat.semaine} / ${etat.annee} (${periode})\n`;
   t += `Technicien : ${etat.technicien}\n`;
   if(etat.equipe.trim()) t += `Équipe : ${etat.equipe}\n`;
-  const absencesListe = Object.entries(etat.absences || {});
+  const absencesListe = etat.absences || [];
   if(absencesListe.length){
-    t += `Jours non travaillés : ` + absencesListe.map(([iso, type]) => jourFr(iso) + " (" + type + ")").join(", ") + `\n`;
+    t += `Jours non travaillés : ` + absencesListe.map(a => (a.personne || "?") + " — " + jourFr(a.date) + " (" + a.type + ")").join(", ") + `\n`;
   }
   t += `\n`;
   etat.lignes.forEach((l, i) => {
@@ -1383,7 +1473,7 @@ $("#btn-envoyer").addEventListener("click", async () => {
 $("#btn-nouvelle").addEventListener("click", () => {
   if(!confirm("Commencer une nouvelle fiche ? Les interventions saisies seront effacées de cet appareil.")) return;
   const s = semaineISO(new Date());
-  etat = { technicien: etat.technicien, equipe: etat.equipe, semaine: s.semaine, annee: s.annee, remarques: "", lignes: [], absences: {} };
+  etat = { technicien: etat.technicien, equipe: etat.equipe, semaine: s.semaine, annee: s.annee, remarques: "", lignes: [], absences: [] };
   etat.lignes.push(nouvelleLigne());
   remplirEnTete();
   rendre();
@@ -1403,7 +1493,7 @@ $("#fichier-charger").addEventListener("change", (e) => {
   lecteur.onload = () => {
     try{
       const d = JSON.parse(lecteur.result);
-      etat = Object.assign({ technicien:"", equipe:"", semaine:1, annee:2026, remarques:"", lignes:[], absences:{} }, d);
+      etat = Object.assign({ technicien:"", equipe:"", semaine:1, annee:2026, remarques:"", lignes:[], absences:[] }, d);
       remplirEnTete();
       rendre();
       enregistrer();
@@ -1678,7 +1768,7 @@ $("#btn-plus-identite").addEventListener("click", () => {
   const brouillon = lireBrouillon();
 
   if(brouillon && Array.isArray(brouillon.lignes) && brouillon.lignes.length){
-    etat = Object.assign({ technicien:"", equipe:"", semaine:s.semaine, annee:s.annee, remarques:"", lignes:[], absences:{} }, brouillon);
+    etat = Object.assign({ technicien:"", equipe:"", semaine:s.semaine, annee:s.annee, remarques:"", lignes:[], absences:[] }, brouillon);
     remplirEnTete();
     rendre();
     const h = etat.lignes.reduce((t, l) => t + (parseFloat(String(l.heures).replace(",", ".")) || 0), 0);
