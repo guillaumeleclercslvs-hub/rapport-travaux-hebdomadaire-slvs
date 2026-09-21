@@ -554,7 +554,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
     </div>
   </details>
 
-  <p class="pied" id="pied-version">Fiche interne — version 41 du 14/08/2026. Fonctionne hors connexion.</p>
+  <p class="pied" id="pied-version">Fiche interne — version 42 du 14/08/2026. Fonctionne hors connexion.</p>
 </main>
 
 <div class="barre">
@@ -1769,6 +1769,11 @@ $("#btn-plus-identite").addEventListener("click", () => {
 
   if(brouillon && Array.isArray(brouillon.lignes) && brouillon.lignes.length){
     etat = Object.assign({ technicien:"", equipe:"", semaine:s.semaine, annee:s.annee, remarques:"", lignes:[], absences:[] }, brouillon);
+    etat.lignes.forEach(l => {
+      if(!l.id) l.id = idAlea();
+      const complete = (l.client || "").trim() && (l.travaux || "").trim() && String(l.heures || "").trim();
+      if(complete) reduites.add(l.id);
+    });
     remplirEnTete();
     rendre();
     const h = etat.lignes.reduce((t, l) => t + (parseFloat(String(l.heures).replace(",", ".")) || 0), 0);
