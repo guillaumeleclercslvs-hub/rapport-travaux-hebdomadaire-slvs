@@ -554,7 +554,7 @@ th{background:var(--acier-100);font-family:var(--mono);font-size:11px;text-trans
     </div>
   </details>
 
-  <p class="pied" id="pied-version">Fiche interne — version 42 du 14/08/2026. Fonctionne hors connexion.</p>
+  <p class="pied" id="pied-version">Fiche interne — version 43 du 14/08/2026. Fonctionne hors connexion.</p>
 </main>
 
 <div class="barre">
@@ -753,8 +753,17 @@ function trierLignes(){
   });
 }
 
+function replierLignesCompletes(){
+  etat.lignes.forEach(l => {
+    if(!l.id) l.id = idAlea();
+    const complete = (l.client || "").trim() && (l.travaux || "").trim() && String(l.heures || "").trim();
+    if(complete && !reduites.has(l.id)) reduites.add(l.id);
+  });
+}
+
 function rendre(){
   trierLignes();
+  replierLignesCompletes();
   rendreAbsences();
   const liste = $("#liste");
   liste.innerHTML = "";
